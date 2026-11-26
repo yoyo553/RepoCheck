@@ -374,6 +374,13 @@ const vuln = (id, pkg, sev, fixedList, aliases = []) => ({
   const rule = name => (csp.split(';').map(s => s.trim().split(/\s+/)).find(a => a[0] === name) || []).slice(1);
   check('安全設定：解析の記録を自分のサイトへ送れる', rule('connect-src').includes("'self'"), rule('connect-src').join(' '));
   check('安全設定：解析のプログラムを読み込める', rule('script-src').includes('https://static.cloudflareinsights.com'), rule('script-src').join(' '));
+  // 1文字の抜けで通信先がくっつくと、その相手への通信が黙って止まる。書き方と、診断で使う相手を毎回確かめる
+  const broken = csp.split(';').flatMap(s => s.trim().split(/\s+/).slice(1))
+    .filter(t => !/^('[a-z-]+'|https:|data:|https:\/\/(\*\.)?[a-z0-9-]+(\.[a-z0-9-]+)+)$/i.test(t));
+  check('安全設定：通信先の書き方が壊れていない（くっつき・打ち間違いなし）', broken.length === 0, broken.join(' / '));
+  const need = ['api.github.com', 'raw.githubusercontent.com', 'api.osv.dev', 'api.securityscorecards.dev', 'huggingface.co'];
+  const missing = need.filter(h => !rule('connect-src').includes('https://' + h));
+  check('安全設定：診断で使う相手すべてに通信できる', missing.length === 0, '足りない：' + missing.join(', '));
 }
 
 console.log(`\n部品テスト：${pass} 件成功／${fail} 件失敗`);
