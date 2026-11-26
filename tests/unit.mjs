@@ -368,5 +368,13 @@ const vuln = (id, pkg, sev, fixedList, aliases = []) => ({
   check('ライセンス欄：名前はエスケープし、https 以外のリンクは出さない', !box.includes('<img') && !box.includes('javascript:'), box.slice(0, 200));
 }
 
+// ---- 公開ページの安全設定：アクセス解析が止められていないか ----
+{
+  const csp = fs.readFileSync(path.join(ROOT, 'web/_headers'), 'utf8').match(/^\s*Content-Security-Policy:(.*)$/m)[1];
+  const rule = name => (csp.split(';').map(s => s.trim().split(/\s+/)).find(a => a[0] === name) || []).slice(1);
+  check('安全設定：解析の記録を自分のサイトへ送れる', rule('connect-src').includes("'self'"), rule('connect-src').join(' '));
+  check('安全設定：解析のプログラムを読み込める', rule('script-src').includes('https://static.cloudflareinsights.com'), rule('script-src').join(' '));
+}
+
 console.log(`\n部品テスト：${pass} 件成功／${fail} 件失敗`);
 process.exit(fail ? 1 : 0);
