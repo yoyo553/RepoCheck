@@ -67,6 +67,15 @@
   .logo b{font-weight:800}
   .logo span{background:linear-gradient(90deg,var(--cyan),var(--accent) 50%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
   nav.top a{color:var(--muted);font-size:14px;margin-left:16px}nav.top a:hover{color:var(--text)}
+  .head-right{display:flex;align-items:center;gap:10px}
+  .gh-link{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--text);border:1px solid var(--line2);background:rgba(255,255,255,.04);border-radius:999px;padding:7px 14px;transition:border-color .2s,background-color .2s,transform .2s var(--ease)}
+  .gh-link:hover{color:#fff;text-decoration:none;border-color:var(--accent);background-color:rgba(255,255,255,.08);transform:translateY(-1px)}
+  .gh-link svg{width:17px;height:17px;flex:none}
+  /* とても狭い画面では、マークだけにする */
+  @media (max-width:460px){ .gh-link{padding:8px} .gh-link span{display:none} .head-right{gap:8px}
+    .logo{font-size:16px;gap:7px} .logo svg{width:25px;height:25px} .langbtn{padding:6px 26px 6px 11px;background-position:right 9px center;font-size:12.5px} }
+  /* 専用ページの上の帯（ロゴ＋3つのリンク）を、スマホで1段に収める */
+  @media (max-width:420px){ nav.top a{font-size:12px;margin-left:10px} nav.top{white-space:nowrap} header.site:has(nav.top) .logo{font-size:16px;gap:7px} header.site:has(nav.top) .logo svg{width:25px;height:25px} }
   .langbtn{appearance:none;-webkit-appearance:none;font-size:13px;border:1px solid var(--line2);background:rgba(255,255,255,.04) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2393A2BD' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center;
     border-radius:999px;padding:7px 32px 7px 14px;cursor:pointer;color:var(--text);font-family:inherit;transition:border-color .2s,background-color .2s}
   .langbtn:hover{border-color:var(--accent);background-color:rgba(255,255,255,.07)}
@@ -298,9 +307,12 @@
 <div class="wrap">
   <header class="site">
     <div class="logo"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5EE6D9"/><stop offset=".55" stop-color="#5AA0F2"/><stop offset="1" stop-color="#A592FF"/></linearGradient></defs><path d="M16 2.5 4.5 7v8.2c0 7 4.9 12.4 11.5 14.3 6.6-1.9 11.5-7.3 11.5-14.3V7z" fill="url(#lg)"/><path d="m10.5 16.2 3.8 3.8 7.4-7.6" fill="none" stroke="#06101F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Repo<span>Check</span></b></div>
+    <div class="head-right">
+    <a class="gh-link" href="https://github.com/yoyo553/RepoCheck" target="_blank" rel="noopener" aria-label="GitHub"><svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg><span>GitHub</span></a>
     <select class="langbtn" id="langSel" aria-label="Language">
       <option value="ja">日本語</option><option value="en">English</option><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option><option value="ko">한국어</option>
     </select>
+    </div>
   </header>
 
   <section class="hero">
@@ -451,7 +463,7 @@
 
   <footer class="site">
     <div><span data-l="ja">RepoCheck — GitHub・Hugging Face の安全性チェック（無料・登録不要）</span><span data-l="en">RepoCheck — a safety check for GitHub and Hugging Face (free, no sign-up)</span></div>
-    <div><span data-l="ja">運営：</span><span data-l="en">Made by </span><a href="https://youmix.info/" target="_blank" rel="noopener">YOUMIX</a> ・ <a href="https://repocheck.youmix.info/privacy" target="_blank" rel="noopener"><span data-l="ja">プライバシーポリシー</span><span data-l="en">Privacy policy</span></a><span id="donateWrap" hidden> ・ <a id="donateLink" href="#" target="_blank" rel="noopener"><span data-l="ja">☕ このツールを応援する</span><span data-l="en">☕ Support this tool</span></a></span></div>
+    <div><span data-l="ja">運営：</span><span data-l="en">Made by </span><a href="https://youmix.info/" target="_blank" rel="noopener">YOUMIX</a> ・ <a href="https://repocheck.youmix.info/privacy" target="_blank" rel="noopener"><span data-l="ja">プライバシーポリシー</span><span data-l="en">Privacy policy</span></a> ・ <a href="https://github.com/yoyo553/RepoCheck" target="_blank" rel="noopener">GitHub</a><span id="donateWrap" hidden> ・ <a id="donateLink" href="#" target="_blank" rel="noopener"><span data-l="ja">☕ このツールを応援する</span><span data-l="en">☕ Support this tool</span></a></span></div>
   </footer>
   <p class="disclaimer" data-l="ja">※ RepoCheck の判定は、公開されている情報から危険の兆候を探す<b>目安</b>です。安全を保証するものではなく、見つけられない危険もあります。ダウンロード・インストール・利用は、ご自身の判断と責任で行ってください。本ツールの利用によって生じた損害について、運営者は責任を負いません。ライセンスの判定も目安のため、仕事や公開物で使う場合は、必ず LICENSE ファイルの本文をご確認ください。</p>
   <p class="disclaimer" data-l="en">* RepoCheck’s results are a <b>rough guide</b> based on public information. They do not guarantee safety, and some dangers cannot be detected. Download, install, and use anything at your own judgment and risk. The operator is not liable for any damage resulting from use of this tool. License results are also only a guide; for work or anything you publish, always read the LICENSE file itself.</p>

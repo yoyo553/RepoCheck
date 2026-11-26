@@ -51,6 +51,15 @@
   .logo b{font-weight:800}
   .logo span{background:linear-gradient(90deg,var(--cyan),var(--accent) 50%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
   nav.top a{color:var(--muted);font-size:14px;margin-left:16px}nav.top a:hover{color:var(--text)}
+  .head-right{display:flex;align-items:center;gap:10px}
+  .gh-link{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--text);border:1px solid var(--line2);background:rgba(255,255,255,.04);border-radius:999px;padding:7px 14px;transition:border-color .2s,background-color .2s,transform .2s var(--ease)}
+  .gh-link:hover{color:#fff;text-decoration:none;border-color:var(--accent);background-color:rgba(255,255,255,.08);transform:translateY(-1px)}
+  .gh-link svg{width:17px;height:17px;flex:none}
+  /* とても狭い画面では、マークだけにする */
+  @media (max-width:460px){ .gh-link{padding:8px} .gh-link span{display:none} .head-right{gap:8px}
+    .logo{font-size:16px;gap:7px} .logo svg{width:25px;height:25px} .langbtn{padding:6px 26px 6px 11px;background-position:right 9px center;font-size:12.5px} }
+  /* 専用ページの上の帯（ロゴ＋3つのリンク）を、スマホで1段に収める */
+  @media (max-width:420px){ nav.top a{font-size:12px;margin-left:10px} nav.top{white-space:nowrap} header.site:has(nav.top) .logo{font-size:16px;gap:7px} header.site:has(nav.top) .logo svg{width:25px;height:25px} }
   .langbtn{appearance:none;-webkit-appearance:none;font-size:13px;border:1px solid var(--line2);background:rgba(255,255,255,.04) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2393A2BD' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center;
     border-radius:999px;padding:7px 32px 7px 14px;cursor:pointer;color:var(--text);font-family:inherit;transition:border-color .2s,background-color .2s}
   .langbtn:hover{border-color:var(--accent);background-color:rgba(255,255,255,.07)}
@@ -290,7 +299,7 @@
 </head>
 <body>
 <div class="wrap">
-  <header class="site"><a href="/" style="color:var(--text);text-decoration:none"><div class="logo"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5EE6D9"/><stop offset=".55" stop-color="#5AA0F2"/><stop offset="1" stop-color="#A592FF"/></linearGradient></defs><path d="M16 2.5 4.5 7v8.2c0 7 4.9 12.4 11.5 14.3 6.6-1.9 11.5-7.3 11.5-14.3V7z" fill="url(#lg)"/><path d="m10.5 16.2 3.8 3.8 7.4-7.6" fill="none" stroke="#06101F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Repo<span>Check</span></b></div></a><nav class="top"><a href="/">トップ</a><a href="/privacy">プライバシー</a></nav></header>
+  <header class="site"><a href="/" style="color:var(--text);text-decoration:none"><div class="logo"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5EE6D9"/><stop offset=".55" stop-color="#5AA0F2"/><stop offset="1" stop-color="#A592FF"/></linearGradient></defs><path d="M16 2.5 4.5 7v8.2c0 7 4.9 12.4 11.5 14.3 6.6-1.9 11.5-7.3 11.5-14.3V7z" fill="url(#lg)"/><path d="m10.5 16.2 3.8 3.8 7.4-7.6" fill="none" stroke="#06101F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Repo<span>Check</span></b></div></a><nav class="top"><a href="/">トップ</a><a href="/privacy">プライバシー</a><a href="https://github.com/yoyo553/RepoCheck" target="_blank" rel="noopener">GitHub</a></nav></header>
   <h1 class="page-h1">faster-whisper は安全？入れる前のチェック結果</h1>
   <p class="checked">診断日：2026年11月26日（この日に公開されていた情報で判定しています。最新の結果は下のボタンから）</p>
   <p class="intro">Whisper を速く動くように作り直したものです。同じモデルを使いながら、処理が速く、使うメモリも少なくて済むのが特長です。</p>
@@ -309,7 +318,7 @@ pip install -r requirements.txt
   <div class="box"><h2>ほかのツールの診断結果</h2><ul class="toollist"><li><a href="/r/uvr">UVR</a></li><li><a href="/r/demucs">Demucs</a></li><li><a href="/r/whisper">Whisper</a></li><li><b>faster-whisper</b></li><li><a href="/r/whisperx">WhisperX</a></li><li><a href="/r/rvc">RVC</a></li><li><a href="/r/basic-pitch">Basic Pitch</a></li><li><a href="/r/matchering">Matchering</a></li><li><a href="/r/comfyui">ComfyUI</a></li><li><a href="/r/stable-diffusion-webui">Stable Diffusion web UI</a></li><li><a href="/r/ffmpeg-wasm">ffmpeg.wasm</a></li><li><a href="/r/whisper-large-v3">whisper-large-v3</a></li></ul></div>
   <footer class="site">
     <div>RepoCheck — GitHub・Hugging Face の安全性チェック（無料・登録不要）</div>
-    <div>運営：<a href="https://youmix.info/" target="_blank" rel="noopener">YOUMIX</a> ・ <a href="/privacy">プライバシーポリシー</a></div>
+    <div>運営：<a href="https://youmix.info/" target="_blank" rel="noopener">YOUMIX</a> ・ <a href="/privacy">プライバシーポリシー</a> ・ <a href="https://github.com/yoyo553/RepoCheck" target="_blank" rel="noopener">GitHub</a></div>
   </footer>
   <p class="disclaimer">※ この判定は、2026年11月26日に公開されていた情報から危険の兆候を探した<b>目安</b>です。安全を保証するものではなく、見つけられない危険もあります。その後に内容が変わっていることもあるので、使う前に最新の情報で診断し直してください。ダウンロード・インストール・利用は、ご自身の判断と責任で行ってください。</p>
 </div>

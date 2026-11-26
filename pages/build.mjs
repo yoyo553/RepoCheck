@@ -108,7 +108,7 @@ for (const t of tools) {
 </head>
 <body>
 <div class="wrap">
-  <header class="site"><a href="/" style="color:var(--text);text-decoration:none">${logo}</a><nav class="top"><a href="/">トップ</a><a href="/privacy">プライバシー</a></nav></header>
+  <header class="site"><a href="/" style="color:var(--text);text-decoration:none">${logo}</a><nav class="top"><a href="/">トップ</a><a href="/privacy">プライバシー</a><a href="https://github.com/yoyo553/RepoCheck" target="_blank" rel="noopener">GitHub</a></nav></header>
   <h1 class="page-h1">${esc(t.name)}${wa}安全？入れる前のチェック結果</h1>
   <p class="checked">診断日：${day.ja}（この日に公開されていた情報で判定しています。最新の結果は下のボタンから）</p>
   <p class="intro">${esc(t.intro)}</p>
@@ -118,7 +118,7 @@ for (const t of tools) {
   <div class="box"><h2>ほかのツールの診断結果</h2>${toolList(t.slug)}</div>
   <footer class="site">
     <div>RepoCheck — GitHub・Hugging Face の安全性チェック（無料・登録不要）</div>
-    <div>運営：<a href="https://youmix.info/" target="_blank" rel="noopener">YOUMIX</a> ・ <a href="/privacy">プライバシーポリシー</a></div>
+    <div>運営：<a href="https://youmix.info/" target="_blank" rel="noopener">YOUMIX</a> ・ <a href="/privacy">プライバシーポリシー</a> ・ <a href="https://github.com/yoyo553/RepoCheck" target="_blank" rel="noopener">GitHub</a></div>
   </footer>
   <p class="disclaimer">※ この判定は、${day.ja}に公開されていた情報から危険の兆候を探した<b>目安</b>です。安全を保証するものではなく、見つけられない危険もあります。その後に内容が変わっていることもあるので、使う前に最新の情報で診断し直してください。ダウンロード・インストール・利用は、ご自身の判断と責任で行ってください。</p>
 </div>
