@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://repocheck.youmix.info/sitemap.xml

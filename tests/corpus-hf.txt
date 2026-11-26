@@ -1,0 +1,50 @@
+# Hugging Face の検証セット：正規のもの。ここで出る危険信号・注意は誤報の候補
+# 行頭の「!」は「危険信号が出なければ失敗」（検査用に公開されている危険なデモ）
+
+# --- 音声・音楽
+https://huggingface.co/openai/whisper-large-v3
+https://huggingface.co/openai/whisper-large-v3-turbo
+https://huggingface.co/pyannote/speaker-diarization-3.1
+https://huggingface.co/facebook/musicgen-small
+https://huggingface.co/suno/bark
+https://huggingface.co/myshell-ai/MeloTTS-English
+https://huggingface.co/fishaudio/fish-speech-1.5
+https://huggingface.co/coqui/XTTS-v2
+https://huggingface.co/lj1995/VoiceConversionWebUI
+https://huggingface.co/spotify/basic-pitch
+https://huggingface.co/hexgrad/Kokoro-82M
+# --- 画像
+https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0
+https://huggingface.co/black-forest-labs/FLUX.1-schnell
+https://huggingface.co/lllyasviel/ControlNet
+https://huggingface.co/runwayml/stable-diffusion-v1-5
+https://huggingface.co/briaai/RMBG-1.4
+# --- 言語モデル（自作コード・gguf・第三者の変換を含む）
+https://huggingface.co/microsoft/Phi-3-mini-4k-instruct
+https://huggingface.co/Qwen/Qwen2.5-7B-Instruct
+https://huggingface.co/deepseek-ai/DeepSeek-R1
+https://huggingface.co/google-bert/bert-base-uncased
+https://huggingface.co/bert-base-uncased
+https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF
+https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF
+https://huggingface.co/unsloth/Llama-3.2-1B-Instruct
+https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
+https://huggingface.co/cl-tohoku/bert-base-japanese
+https://huggingface.co/rinna/japanese-gpt-neox-3.6b-instruction-ppo
+https://huggingface.co/tohoku-nlp/bert-base-japanese-v3
+# --- Space
+https://huggingface.co/spaces/openai/whisper
+https://huggingface.co/spaces/black-forest-labs/FLUX.1-schnell
+https://huggingface.co/spaces/hf-audio/open_asr_leaderboard
+https://huggingface.co/spaces/lmarena-ai/chatbot-arena-leaderboard
+https://huggingface.co/spaces/akhaliq/AnimeGANv2
+https://huggingface.co/spaces/r3gm/RVC_HFv2
+# --- データセット
+https://huggingface.co/datasets/openslr/librispeech_asr
+https://huggingface.co/datasets/mozilla-foundation/common_voice_17_0
+https://huggingface.co/datasets/HuggingFaceFW/fineweb
+https://huggingface.co/datasets/rajpurkar/squad
+
+# --- 危険なはずのもの
+!https://huggingface.co/ykilcher/totally-harmless-model
+!https://huggingface.co/mcpotato/42-eicar-street

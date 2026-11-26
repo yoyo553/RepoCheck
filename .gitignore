@@ -1,0 +1,15 @@
+.DS_Store
+.env
+*.pem
+*.p8
+node_modules/
+.venv/
+build/
+tests/cache/
+tests/last-report.md
+tests/err.log
+tests/baseline-*
+tests/after-*.json
+tests/hf-*.json
+deploy/public/
+deploy/.wrangler/

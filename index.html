@@ -1,0 +1,2233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RepoCheck｜GitHub・Hugging Face の安全性チェック</title>
+<meta name="description" content="GitHub や Hugging Face のURLを貼るだけで、ウイルス配布・なりすましの兆候、依存ライブラリの既知の脆弱性、使い方、ライセンス（商用利用の可否）を日本語で判定する無料ツール。登録不要。">
+<link rel="canonical" href="https://repocheck.youmix.info/">
+<link rel="alternate" hreflang="ja" href="https://repocheck.youmix.info/">
+<link rel="alternate" hreflang="en" href="https://repocheck.youmix.info/?lang=en">
+<link rel="alternate" hreflang="zh-Hans" href="https://repocheck.youmix.info/?lang=zh-CN">
+<link rel="alternate" hreflang="zh-Hant" href="https://repocheck.youmix.info/?lang=zh-TW">
+<link rel="alternate" hreflang="ko" href="https://repocheck.youmix.info/?lang=ko">
+<link rel="alternate" hreflang="x-default" href="https://repocheck.youmix.info/">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<!-- SNS で共有したときの表示 -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="RepoCheck">
+<meta property="og:title" content="RepoCheck｜GitHub・Hugging Face の安全性チェック">
+<meta property="og:description" content="GitHub や Hugging Face のURLを貼るだけで、ウイルス配布・なりすましの兆候、依存ライブラリの既知の脆弱性、使い方、ライセンス（商用利用の可否）を日本語で判定する無料ツール。登録不要。">
+<meta property="og:url" content="https://repocheck.youmix.info/">
+<meta property="og:image" content="https://repocheck.youmix.info/og.png">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="zh_CN">
+<meta property="og:locale:alternate" content="zh_TW">
+<meta property="og:locale:alternate" content="ko_KR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="RepoCheck｜GitHub・Hugging Face の安全性チェック">
+<meta name="twitter:description" content="GitHub や Hugging Face のURLを貼るだけで、ウイルス配布・なりすましの兆候、依存ライブラリの既知の脆弱性、使い方、ライセンス（商用利用の可否）を日本語で判定する無料ツール。登録不要。">
+<meta name="twitter:image" content="https://repocheck.youmix.info/og.png">
+<style>
+  /* ==========================================================
+     RepoCheck — 「夜の観測所」デザイン（2026-11-26〜）
+     濃紺の地に、点と線（部品どうしのつながり）がゆっくり動く。色は状態を伝えるときだけ使う。
+     ここのクラス名は index.html の描画処理・pages/build.mjs・Mac アプリの selftest と共有しているので、名前は変えないこと
+     ========================================================== */
+  :root{
+    --bg:#060A14;--bg2:#0A1120;--panel:rgba(148,178,255,.045);--panel2:rgba(148,178,255,.08);--card:rgba(12,19,34,.88);
+    --line:rgba(150,180,255,.13);--line2:rgba(150,180,255,.22);
+    --text:#E8EEF9;--muted:#9AA9C3;--dim:#7787A3;
+    --accent:#8BC2FF;--blue:#5AA0F2;--cyan:#5EE6D9;--violet:#A592FF;
+    --ok:#3FDDA0;--warn:#FFBE55;--ng:#FF6E72;
+    --radius:18px;--ease:cubic-bezier(.2,.8,.2,1);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html{background:var(--bg)}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic",Meiryo,sans-serif;color:var(--text);line-height:1.75;
+    background:
+      radial-gradient(1200px 600px at 15% -10%,rgba(90,160,242,.16),transparent 60%),
+      radial-gradient(900px 500px at 95% 5%,rgba(165,146,255,.12),transparent 60%),
+      radial-gradient(1000px 700px at 50% 110%,rgba(94,230,217,.07),transparent 60%),
+      var(--bg);
+    background-attachment:fixed;min-height:100vh;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  ::selection{background:rgba(139,194,255,.35)}
+  a{color:var(--accent);text-decoration:none;transition:color .2s}a:hover{color:#fff;text-decoration:underline;text-underline-offset:3px}
+  :focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:6px}
+  #sky{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.9}
+  .wrap{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:18px 18px 80px}
+
+  /* ---------- 上の帯 ---------- */
+  header.site{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:6px 0 18px;margin-bottom:8px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:.01em}
+  .logo svg{width:30px;height:30px;filter:drop-shadow(0 4px 14px rgba(90,160,242,.35))}
+  .logo b{font-weight:800}
+  .logo span{background:linear-gradient(90deg,var(--cyan),var(--accent) 50%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+  nav.top a{color:var(--muted);font-size:14px;margin-left:16px}nav.top a:hover{color:var(--text)}
+  .langbtn{appearance:none;-webkit-appearance:none;font-size:13px;border:1px solid var(--line2);background:rgba(255,255,255,.04) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2393A2BD' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center;
+    border-radius:999px;padding:7px 32px 7px 14px;cursor:pointer;color:var(--text);font-family:inherit;transition:border-color .2s,background-color .2s}
+  .langbtn:hover{border-color:var(--accent);background-color:rgba(255,255,255,.07)}
+  .langbtn option{background:#0B1222;color:var(--text)}
+
+  /* ---------- 見出しと入力（ヒーロー） ---------- */
+  .hero{padding:44px 0 8px;text-align:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:10px;font:600 11.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+    border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:999px;padding:8px 14px;margin:0 0 22px}
+  .eyebrow i{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(63,221,160,.6);animation:beat 2.4s infinite}
+  h1{font-size:clamp(30px,5.6vw,50px);line-height:1.18;margin:0 0 18px;font-weight:800;letter-spacing:-.01em;
+    background:linear-gradient(180deg,#fff 30%,#B9C8E6);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .nw{display:inline-block}
+  h1{text-wrap:balance}
+  .lead{text-wrap:pretty}
+  .lead{color:var(--muted);font-size:15px;margin:0 auto 30px;max-width:680px;line-height:1.9}
+  .lead b{color:#C9D6EE;font-weight:600}
+
+  .searchbox{position:relative;display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:720px;margin:0 auto;padding:8px;border-radius:22px;
+    background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.025));border:1px solid var(--line2);
+    box-shadow:0 24px 70px -20px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);transition:border-color .3s,box-shadow .3s}
+  .searchbox:focus-within{border-color:rgba(139,194,255,.55);box-shadow:0 24px 70px -20px rgba(0,0,0,.7),0 0 0 5px rgba(90,160,242,.12)}
+  .searchbox .sb-ic{flex:none;width:20px;height:20px;margin-left:12px;color:var(--muted)}
+  .searchbox input{flex:1;min-width:200px;padding:14px 8px;font-size:16px;border:none;background:transparent;color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:-.01em}
+  .searchbox input::placeholder{color:var(--dim)}
+  .searchbox input:focus{outline:none}
+  .searchbox button{position:relative;padding:14px 26px;font-size:15px;font-weight:700;border:none;border-radius:15px;cursor:pointer;font-family:inherit;color:#06101F;
+    background:linear-gradient(135deg,var(--cyan),var(--blue) 55%,var(--violet));background-size:160% 160%;transition:transform .2s var(--ease),filter .2s,background-position .6s;
+    box-shadow:0 10px 30px -8px rgba(90,160,242,.6)}
+  .searchbox button:hover{transform:translateY(-1px);background-position:100% 0;filter:brightness(1.07)}
+  .searchbox button:active{transform:translateY(1px)}
+  .searchbox button:disabled{cursor:default;filter:saturate(.4) brightness(.8);transform:none}
+  /* 診断中のボタンは、くすませずに光を流す（止まって見えないように） */
+  html.scanning .searchbox button:disabled{filter:none;background:linear-gradient(110deg,var(--blue) 30%,#CFF7F3 50%,var(--blue) 70%);background-size:250% 100%;animation:sheen 1.2s linear infinite}
+  /* 診断中：入力欄のふちを光が回る */
+  @property --ang{syntax:'<angle>';initial-value:0deg;inherits:false}
+  .searchbox::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;pointer-events:none;opacity:0;transition:opacity .4s;
+    background:conic-gradient(from var(--ang),transparent 0 62%,var(--cyan) 75%,var(--violet) 88%,transparent 100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+  html.scanning .searchbox::after{opacity:1;animation:spin 1.3s linear infinite}
+
+  .presets{margin:22px auto 0;font-size:13px;color:var(--muted);max-width:760px}
+  .presets b{color:var(--dim);font-weight:600;display:block;margin-bottom:10px;font-size:12px;letter-spacing:.06em}
+  .chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:rgba(255,255,255,.03);border-radius:999px;padding:6px 13px;margin:0 4px 8px;font-size:12.5px;color:#C2D0EA;cursor:pointer;
+    transition:transform .25s var(--ease),border-color .25s,background-color .25s,color .25s}
+  .chip:hover{transform:translateY(-2px);border-color:rgba(139,194,255,.5);background:rgba(139,194,255,.09);color:#fff}
+
+  .token{margin:22px auto 0;max-width:720px;font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02);padding:10px 16px}
+  .token summary{cursor:pointer;font-weight:600;color:#B6C4DE;list-style:none}
+  .token summary::-webkit-details-marker{display:none}
+  .token summary::before{content:"＋";display:inline-block;margin-right:8px;color:var(--accent);transition:transform .25s var(--ease)}
+  .token[open] summary::before{transform:rotate(45deg)}
+  .token p{margin:8px 0;line-height:1.7}
+  .token .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .token input{flex:1;min-width:200px;padding:10px 12px;border-radius:10px;border:1px solid var(--line2);background:rgba(0,0,0,.25);color:var(--text);font-family:ui-monospace,Menlo,monospace}
+  .token button{padding:9px 16px;border-radius:10px;border:1px solid var(--line2);background:rgba(255,255,255,.05);color:var(--text);cursor:pointer;font-family:inherit}
+  .token button:hover{border-color:var(--accent)}
+
+  .status{font-size:13px;color:var(--muted);margin:14px auto 0;min-height:22px;text-align:center;max-width:720px;display:flex;align-items:center;justify-content:center;gap:10px}
+  .status:empty{visibility:hidden}
+  html.scanning .status::before{content:"";flex:none;width:14px;height:14px;border-radius:50%;border:2px solid rgba(94,230,217,.25);border-top-color:var(--cyan);animation:spin2 .8s linear infinite}
+  .status.err{color:var(--ng)}
+
+  /* ---------- 結果 ---------- */
+  #out{display:none;margin-top:34px}
+  #out.show{display:block}
+  #out.show>*{animation:rise .7s var(--ease) both;animation-delay:calc(var(--i,0) * 75ms)}
+  #out.still>*,#out.still .orb .ico,#out.still .langbar i{animation:none}
+  .box{position:relative;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px 22px;margin-bottom:16px;overflow:hidden;
+    box-shadow:0 20px 60px -30px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.04)}
+  /* 欄にすりガラス（backdrop-filter）は付けない：後ろの星座が毎コマ動くので、欄の数だけぼかしを計算し直してスマホが重くなる */
+  /* マウスの位置にうっすら光が付いてくる */
+  .box::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .4s;
+    background:radial-gradient(420px circle at var(--mx,50%) var(--my,0%),rgba(139,194,255,.07),transparent 60%)}
+  .box:hover::before{opacity:1}
+  .box h2{font-size:15px;margin:0 0 14px;display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:.02em;color:#DCE5F5}
+  .repohead{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-start;min-width:0}
+  .repohead>div{min-width:0}
+  .repohead .name{font-size:22px;font-weight:800;margin:0;letter-spacing:-.01em;overflow-wrap:anywhere;line-height:1.35}
+  .repohead .name a{color:#fff}
+  .repohead .desc{font-size:14px;color:var(--muted);margin:6px 0 0;overflow-wrap:anywhere}
+  .metas{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .meta{font-size:12.5px;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:5px 11px;color:var(--muted)}
+  .meta b{color:var(--text);font-variant-numeric:tabular-nums}
+  .verdict{position:relative;font-size:15px;font-weight:700;padding:13px 16px;border-radius:12px;margin:0 0 12px;border:1px solid}
+  .v-ok{background:rgba(63,221,160,.09);border-color:rgba(63,221,160,.32);color:#8FF0C8}
+  .v-warn{background:rgba(255,190,85,.09);border-color:rgba(255,190,85,.32);color:#FFD592}
+  .v-ng{background:rgba(255,110,114,.10);border-color:rgba(255,110,114,.38);color:#FFA9AB}
+  .stars{font-size:18px;letter-spacing:3px;color:#FFC857;text-shadow:0 0 18px rgba(255,200,87,.35)}
+  .stars i{color:#26314A;font-style:normal;text-shadow:none}
+  .route{position:relative;border:1px solid var(--line);background:rgba(255,255,255,.025);border-radius:14px;padding:16px;margin-bottom:10px;transition:border-color .25s}
+  .route:hover{border-color:var(--line2)}
+  .route.best{border-color:rgba(139,194,255,.45);background:linear-gradient(180deg,rgba(90,160,242,.10),rgba(90,160,242,.02))}
+  .route .rt{font-size:15px;font-weight:700;margin:0 0 4px;color:#fff}
+  .route .rd{font-size:13.5px;color:var(--muted);margin:0}
+  .badge{display:inline-block;font-size:11px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--blue));color:#06101F;border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:middle;letter-spacing:.04em}
+  pre{background:#04070E;color:#D7E3F7;border:1px solid var(--line);border-radius:12px;padding:15px 16px;overflow-x:auto;font-size:13px;line-height:1.8;margin:12px 0 0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.92em;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:6px;padding:1px 5px;color:#CFE0FF}
+  pre code{background:none;border:none;padding:0}
+  .copy{font-size:12px;border:1px solid var(--line2);background:rgba(255,255,255,.04);border-radius:9px;padding:6px 13px;cursor:pointer;color:var(--accent);margin-top:10px;font-family:inherit;transition:border-color .2s,color .2s,background-color .2s}
+  .copy:hover{border-color:var(--accent);color:#fff;background:rgba(139,194,255,.1)}
+  ul.notes{margin:0;padding-left:20px;font-size:13.5px;color:var(--muted)}
+  ul.notes li{margin-bottom:7px}
+  ul.notes li::marker{color:var(--dim)}
+  ul.notes li b{color:var(--text)}
+  .langbar{display:flex;height:7px;border-radius:999px;overflow:hidden;margin:6px 0 10px;background:rgba(255,255,255,.06)}
+  .langbar i{display:block;height:100%;transform-origin:left;animation:grow 1.1s var(--ease) both .2s}
+  .langlist{font-size:12.5px;color:var(--muted)}
+  .langlist span{margin-right:12px;white-space:nowrap}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .sigh{font-size:12px;font-weight:700;color:var(--dim);margin:18px 0 8px;letter-spacing:.08em}
+  .sig{position:relative;background:rgba(255,255,255,.025);border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:10px;padding:11px 14px;margin-bottom:8px;font-size:13.5px;color:var(--muted);overflow-wrap:break-word}
+  .sig > b{display:block;color:var(--text);margin-bottom:3px}
+  .sig div b{color:var(--text)}
+  .sig.d{border-left-color:var(--ng);background:linear-gradient(90deg,rgba(255,110,114,.08),rgba(255,255,255,.02) 40%)}
+  .sig.w{border-left-color:var(--warn);background:linear-gradient(90deg,rgba(255,190,85,.07),rgba(255,255,255,.02) 40%)}
+  .sig.g{border-left-color:var(--ok)}
+  .sig.i{border-left-color:#5F6E89}
+  /* 長いファイル名（空白の無いパス）で、スマホの画面が横にはみ出さないようにする */
+  #out code,.seo code{overflow-wrap:anywhere}
+  table.lic{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;margin-top:10px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  table.lic th,table.lic td{border-bottom:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+  table.lic tr:last-child td{border-bottom:none}
+  table.lic th{background:rgba(255,255,255,.04);color:var(--text);white-space:nowrap;font-size:12.5px}
+  table.lic td{color:var(--muted)}
+  /* 狭い画面では表の中を折り返す（折り返さないと脆弱性の表がスマホで横にはみ出す） */
+  @media (max-width:480px){ table.lic th{white-space:normal} table.lic th,table.lic td{padding:7px 6px;overflow-wrap:anywhere} }
+
+  /* ---------- ライセンス欄 ---------- */
+  .lic-head{border:1px solid;border-radius:14px;padding:16px 18px;margin:0 0 12px}
+  .lic-name{display:block;font-size:24px;font-weight:800;line-height:1.35;overflow-wrap:anywhere;letter-spacing:-.01em}
+  .lic-say{display:block;font-size:14.5px;font-weight:700;opacity:.9;margin-top:2px}
+  .lic-marks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 14px}
+  .lic-mark{border:1px solid;border-radius:14px;padding:12px 4px 10px;text-align:center;line-height:1.35;transition:transform .3s var(--ease)}
+  .lic-mark:hover{transform:translateY(-3px)}
+  .lic-mark span{display:block;font-size:12px;font-weight:600;opacity:.85}
+  .lic-mark b{display:block;font-size:30px;margin:2px 0}
+  .lic-mark em{display:block;font-style:normal;font-size:12px;font-weight:600}
+  .m-ok{background:rgba(63,221,160,.08);border-color:rgba(63,221,160,.3);color:#8FF0C8}
+  .m-warn{background:rgba(255,190,85,.08);border-color:rgba(255,190,85,.3);color:#FFD592}
+  .m-ng{background:rgba(255,110,114,.09);border-color:rgba(255,110,114,.35);color:#FFA9AB}
+  .lic-note{font-size:13.5px;color:var(--muted);margin:0 0 8px}
+  .lic-sub{font-size:12px;font-weight:700;margin:12px 0 6px;color:var(--dim);letter-spacing:.08em}
+  .lic-link{font-size:14px;font-weight:600;margin:10px 0 0}
+  .lic-foot{font-size:12px;color:var(--dim);margin:10px 0 0}
+
+  /* ---------- 結果のまとめ（演出用のスクリプトが作る。中身は画面にある文を写すだけ） ---------- */
+  .summary{position:relative;display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;padding:24px;margin-bottom:16px;border-radius:24px;border:1px solid var(--line2);overflow:hidden;
+    background:radial-gradient(500px 200px at 0% 0%,var(--glow,rgba(90,160,242,.18)),transparent 70%),var(--card);box-shadow:0 30px 80px -30px rgba(0,0,0,.9)}
+  .summary.s-ok{--c:var(--ok);--glow:rgba(63,221,160,.16)} .summary.s-warn{--c:var(--warn);--glow:rgba(255,190,85,.16)} .summary.s-ng{--c:var(--ng);--glow:rgba(255,110,114,.2)}
+  .orb{position:relative;width:132px;height:132px}
+  .orb svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .orb .track{fill:none;stroke:rgba(255,255,255,.07);stroke-width:9}
+  .orb .arc{fill:none;stroke:var(--c);stroke-width:9;stroke-linecap:round;stroke-dasharray:339.3;stroke-dashoffset:339.3;transition:stroke-dashoffset 1.4s var(--ease) .15s}
+  /* 輪の後ろの光は丸く（SVG に drop-shadow を付けると四角くにじむ） */
+  .orb::before{content:"";position:absolute;inset:10%;border-radius:50%;background:radial-gradient(circle,var(--glow),transparent 70%);filter:blur(6px)}
+  .orb .ico{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:900;color:var(--c);animation:pop .7s var(--ease) both .5s}
+  .s-ng .orb::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--c);opacity:0;animation:ping 2.2s var(--ease) infinite 1.2s}
+  .sum-name{font-size:13px;color:var(--muted);font-family:ui-monospace,Menlo,monospace;overflow-wrap:anywhere;margin:0 0 4px}
+  .sum-say{font-size:19px;font-weight:800;line-height:1.45;color:#fff;margin:0 0 12px;text-wrap:balance}
+  .sum-row{display:flex;flex-wrap:wrap;gap:8px}
+  .sum-pill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;border:1px solid var(--line2);border-radius:999px;padding:4px 11px;background:rgba(255,255,255,.04);color:var(--text);font-variant-numeric:tabular-nums}
+  .sum-pill.p-d{color:#FFA9AB;border-color:rgba(255,110,114,.4)} .sum-pill.p-w{color:#FFD592;border-color:rgba(255,190,85,.4)} .sum-pill.p-g{color:#8FF0C8;border-color:rgba(63,221,160,.35)}
+  .sum-pill.p-lic{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sum-nav{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--line)}
+  .sum-nav button{font:inherit;font-size:12px;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:4px 11px;cursor:pointer;transition:all .2s}
+  .sum-nav button:hover{color:#fff;border-color:var(--accent);background:rgba(139,194,255,.08)}
+  @media(max-width:520px){ .summary{grid-template-columns:1fr;justify-items:center;text-align:center} .sum-row{justify-content:center} .orb{width:116px;height:116px} .sum-nav{justify-content:center} }
+
+  /* ---------- 説明・下の帯 ---------- */
+  .seo{color:var(--muted);font-size:14.5px;margin-top:54px;padding:30px 28px;border:1px solid var(--line);border-radius:var(--radius);background:rgba(255,255,255,.02)}
+  .seo h2{color:#fff;font-size:19px;margin:30px 0 10px;letter-spacing:.01em}
+  .seo h2:first-child{margin-top:0}
+  .seo h3{color:var(--text);font-size:15px;margin:20px 0 8px}
+  .toollist{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:8px 0 0}
+  .toollist li{font-size:13px;border:1px solid var(--line);border-radius:999px;padding:5px 13px;background:var(--panel);transition:border-color .2s,transform .25s var(--ease)}
+  .toollist li:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .toollist a{text-decoration:none}
+  footer.site{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);color:var(--dim);font-size:13px;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between}
+  footer.site a{color:var(--muted)}
+  .adnote{color:var(--dim);font-size:12px;margin:24px 0 0}
+  .disclaimer{font-size:12px;color:var(--dim);line-height:1.8;margin:18px 0 0}
+  .promo{border-color:rgba(255,122,69,.35);background:radial-gradient(400px 160px at 0% 0%,rgba(255,122,69,.14),transparent 70%),var(--card)}
+  .promo-t{font-weight:800;font-size:16px;margin:0 0 6px;color:#fff}
+  .promo p{font-size:13.5px;margin:0 0 14px;color:var(--muted)}
+  .promo p b{color:var(--text)}
+  .promo-btn{display:inline-block;background:linear-gradient(135deg,#FF9A5C,#FF6A3D);color:#1A0A03;font-weight:800;font-size:14px;padding:11px 20px;border-radius:12px;text-decoration:none;box-shadow:0 10px 28px -10px rgba(255,122,69,.7);transition:transform .2s var(--ease)}
+  .promo-btn:hover{transform:translateY(-2px);color:#1A0A03;text-decoration:none}
+  .badgebox summary{cursor:pointer;font-size:14px;font-weight:600;color:var(--accent)}
+  .badgebox p{font-size:13.5px;color:var(--muted);margin:10px 0}
+
+  @media(max-width:560px){
+    .hero{padding-top:22px}
+    .searchbox{padding:6px;border-radius:18px}
+    .searchbox .sb-ic{display:none}
+    .searchbox input{padding:13px 10px;font-size:15px}
+    .searchbox button{width:100%}
+    .eyebrow{font-size:9.5px;letter-spacing:.05em;padding:7px 11px;gap:7px}
+    .lead{font-size:14px}
+    .box{padding:18px 16px}
+    .seo{padding:22px 18px}
+  }
+
+  /* ---------- 動き ---------- */
+  @keyframes rise{from{opacity:0;transform:translateY(22px) scale(.985);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+  @keyframes spin{to{--ang:360deg}}
+  @keyframes sheen{from{background-position:100% 0}to{background-position:-150% 0}}
+  @keyframes spin2{to{transform:rotate(360deg)}}
+  @keyframes beat{0%{box-shadow:0 0 0 0 rgba(63,221,160,.55)}70%{box-shadow:0 0 0 9px rgba(63,221,160,0)}100%{box-shadow:0 0 0 0 rgba(63,221,160,0)}}
+  @keyframes grow{from{transform:scaleX(0)}to{transform:none}}
+  @keyframes pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+  @keyframes ping{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}
+  /* 動きを減らす設定の人には、動きを止める */
+  @media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation:none !important;transition:none !important} #sky{display:none} .orb .arc{transition:none} }
+
+  /* 言語の切り替え：data-l="ja" / data-l="en" の片方だけを表示する */
+  /* 中国語・韓国語では英語の部品を表示し、中身を i18n.js の訳に差し替える */
+  html[lang="ja"] [data-l="en"], html:not([lang="ja"]) [data-l="ja"]{display:none !important}
+  html[lang="zh-CN"] body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif}
+  html[lang="zh-TW"] body{font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei","Noto Sans TC",sans-serif}
+  html[lang="ko"] body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
+  /* Mac アプリの中でだけ見せる説明（公開ページでは隠す） */
+  html:not(.in-app) .app-only{display:none !important}
+  html.in-app .web-only{display:none !important}
+</style>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<div class="wrap">
+  <header class="site">
+    <div class="logo"><svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5EE6D9"/><stop offset=".55" stop-color="#5AA0F2"/><stop offset="1" stop-color="#A592FF"/></linearGradient></defs><path d="M16 2.5 4.5 7v8.2c0 7 4.9 12.4 11.5 14.3 6.6-1.9 11.5-7.3 11.5-14.3V7z" fill="url(#lg)"/><path d="m10.5 16.2 3.8 3.8 7.4-7.6" fill="none" stroke="#06101F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Repo<span>Check</span></b></div>
+    <select class="langbtn" id="langSel" aria-label="Language">
+      <option value="ja">日本語</option><option value="en">English</option><option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option><option value="ko">한국어</option>
+    </select>
+  </header>
+
+  <section class="hero">
+  <p class="eyebrow" aria-hidden="true"><i></i>GitHub · Hugging Face · OSV.dev · OpenSSF</p>
+  <h1><span data-l="ja"><span class="nw">GitHub・Hugging Face</span> <span class="nw">診断＋安全性チェック</span></span><span data-l="en">GitHub & Hugging Face Check + Safety Scan</span></h1>
+  <p class="lead" data-l="ja">GitHub か Hugging Face（AI のモデル・データセット・Space）の URL を貼るだけで、<b>①安全そうか（ウイルス配布・なりすましの兆候）②どうやって使うか ③何の技術が必要か ④どのくらい難しいか ⑤仕事で使っていいか（ライセンス）⑥今も動きそうか</b>を自動で判定します。セットアップのコマンドもそのままコピーできる形で出します。</p>
+  <p class="lead" data-l="en">Paste a GitHub or Hugging Face (AI model, dataset, or Space) URL and RepoCheck tells you <b>(1) whether it looks safe (signs of malware or impersonation), (2) how to use it, (3) what technology it needs, (4) how hard it is, (5) whether you can use it for work (license), and (6) whether it still works</b>. Setup commands are ready to copy.</p>
+
+  <div class="searchbox">
+    <svg class="sb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="url" type="text" placeholder="https://github.com/openai/whisper" autocomplete="off" spellcheck="false">
+    <button id="go"><span data-l="ja">診断する</span><span data-l="en">Check</span></button>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div class="presets">
+    <b><span data-l="ja">試してみる（クリックで入力）</span><span data-l="en">Try one (click to fill in)</span></b>
+    <span class="chip" data-r="facebookresearch/demucs"><span data-l="ja">ボーカル分離</span><span data-l="en">Vocal separation</span> Demucs</span>
+    <span class="chip" data-r="openai/whisper"><span data-l="ja">文字起こし</span><span data-l="en">Transcription</span> Whisper</span>
+    <span class="chip" data-r="Anjok07/ultimatevocalremovergui">UVR<span data-l="ja">（GUIアプリ）</span><span data-l="en"> (GUI app)</span></span>
+    <span class="chip" data-r="sergree/matchering"><span data-l="ja">自動マスタリング</span><span data-l="en">Auto mastering</span> Matchering</span>
+    <span class="chip" data-r="spotify/basic-pitch"><span data-l="ja">音源→MIDI</span><span data-l="en">Audio → MIDI</span> Basic Pitch</span>
+    <span class="chip" data-r="ffmpegwasm/ffmpeg.wasm"><span data-l="ja">ブラウザ変換</span><span data-l="en">In-browser conversion</span> ffmpeg.wasm</span>
+    <span class="chip" data-r="katspaugh/wavesurfer.js"><span data-l="ja">波形表示</span><span data-l="en">Waveform</span> wavesurfer.js</span>
+    <span class="chip" data-u="https://huggingface.co/openai/whisper-large-v3">🤗 <span data-l="ja">モデル</span><span data-l="en">Model</span> whisper-large-v3</span>
+    <span class="chip" data-u="https://huggingface.co/spaces/openai/whisper">🤗 Space Whisper</span>
+    <span class="chip" data-r="sudara/pamplejuce"><span data-l="ja">JUCEテンプレ</span><span data-l="en">JUCE template</span> pamplejuce</span>
+  </div>
+
+  </section>
+
+  <details class="token" id="tokenBox">
+    <summary><span data-l="ja">問い合わせ回数を増やす（GitHub のトークン）</span><span data-l="en">Raise the request limit (GitHub token)</span></summary>
+    <div data-l="ja">
+      <p>トークンが無いと、GitHub への問い合わせは1時間に60回（診断およそ7回分）までです。
+        トークンを使うと1時間に5,000回まで増えます。</p>
+      <p class="app-only"><b>Mac アプリ版</b>は、この Mac で <code>gh auth login</code> 済みなら自動で使います（ファイルには保存しません）。</p>
+      <p>GitHub の「Settings → Developer settings → Personal access tokens」で
+        権限を何も付けないトークンを作り、下に貼ってください。<b>このブラウザの中だけに保存され</b>、このサイトの運営者には届きません。</p>
+    </div>
+    <div data-l="en">
+      <p>Without a token, GitHub allows 60 requests per hour (about 7 checks).
+        With a token, the limit rises to 5,000 per hour.</p>
+      <p class="app-only"><b>Mac app:</b> if you have run <code>gh auth login</code> on this Mac, the app uses it automatically (nothing is saved to a file).</p>
+      <p>Create a token with no permissions at GitHub “Settings → Developer settings → Personal access tokens”
+        and paste it below. <b>It is stored only in this browser</b> and is never sent to the operator of this site.</p>
+    </div>
+    <div class="row">
+      <input id="tokenInput" type="password" placeholder="github_pat_… / ghp_…" autocomplete="off" spellcheck="false">
+      <button id="tokenSave" type="button"><span data-l="ja">保存</span><span data-l="en">Save</span></button>
+      <button id="tokenClear" type="button"><span data-l="ja">消す</span><span data-l="en">Remove</span></button>
+    </div>
+    <p id="tokenState"></p>
+  </details>
+
+
+  <div id="out"></div>
+
+  <div class="seo" data-l="ja">
+    <h2>このツールの使い方</h2>
+    <p>GitHubのページを開いて、ブラウザのアドレス欄をコピーして貼り付けるだけです。<code>owner/repo</code> の形（例：<code>openai/whisper</code>）でも判定できます。Hugging Face のモデル・データセット・Space の URL も使えます。判定はすべて、あなたのブラウザから公開サービス（GitHub・Hugging Face・OSV.dev・OpenSSF Scorecard）に直接問い合わせて行います。<b>調べた URL や結果は、このサイトの運営者には送られません。</b></p>
+
+    <h2>GitHubとは（プログラミング未経験の方へ）</h2>
+    <p>GitHubは、世界中の開発者がプログラムを公開・共有しているサイトです。無料で使える高性能なAIツールの多くは、まずGitHubで公開されます。ただし「ダウンロードボタンを押せば使える」とは限らず、リポジトリ（プロジェクト1個分のフォルダ）ごとに必要な準備が違います。このツールは、その準備の中身を日本語で説明するために作りました。</p>
+
+    <h3>覚えておくと迷わない用語</h3>
+    <ul class="notes">
+      <li><b>リポジトリ（repository / repo）</b>：プロジェクト1個分のフォルダ。GitHubのページ1つ＝リポジトリ1つ。</li>
+      <li><b>README.md</b>：説明書。必ず最初に読む場所。</li>
+      <li><b>clone（クローン）</b>：そのフォルダを丸ごと自分のパソコンにコピーすること。</li>
+      <li><b>Releases</b>：完成品の配布ページ。ここに <code>.dmg</code> や <code>.zip</code> があれば、普通のアプリと同じ感覚で入れられます。</li>
+      <li><b>Issues</b>：バグ報告と質問の掲示板。<b>エラーが出たら、まずエラー文をここで検索</b>すると同じ人が見つかります。</li>
+      <li><b>Star（スター）</b>：お気に入りの数。多いほど利用者が多く、情報も見つけやすい目安になります。</li>
+    </ul>
+
+    <h2>ライセンスの見方（仕事で使う前に必ず）</h2>
+    <p>「無料で公開されている＝何に使ってもいい」ではありません。代表的なライセンスの扱いは次の通りです。</p>
+    <table class="lic">
+      <tr><th>ライセンス</th><th>商用利用</th><th>注意点</th></tr>
+      <tr><td>MIT / BSD / ISC / Apache-2.0</td><td>◎ 可</td><td>著作権表示を残す。Apacheは変更点の明記も必要。</td></tr>
+      <tr><td>MPL-2.0 / LGPL</td><td>○ 可</td><td>そのファイルを改変したら、その部分は公開が必要。</td></tr>
+      <tr><td>GPL / AGPL</td><td>△ 条件付き</td><td>組み込んだ自作ソフト全体の公開義務が生じ得る。AGPLはWebサービスで使うだけでも対象。</td></tr>
+      <tr><td>CC BY-NC ほか NC 系</td><td>× 不可</td><td>非商用限定。MIX受注などの業務では使えません。</td></tr>
+      <tr><td>ライセンス未記載</td><td>× 原則不可</td><td>権利は作者に残ったまま。無断利用は避け、作者に確認を。</td></tr>
+    </table>
+    <p style="margin-top:10px;font-size:13px">※このツールの判定は目安です。仕事や公開物で使う場合は、必ずリポジトリ内の LICENSE ファイル本文をご自身でご確認ください。学習済みモデル（重みファイル）はコードと別ライセンスのことがあり、特に注意が必要です。</p>
+
+    <h2>よくあるつまずき</h2>
+    <ul class="notes">
+      <li><b>Pythonのバージョン違い</b>：「3.10専用」なのに手元が3.13で動かない、が最頻出。READMEの指定に合わせます。</li>
+      <li><b>仮想環境を作らずに <code>pip install</code></b>：パソコン全体のPython環境が壊れる原因。必ず <code>venv</code> の中で入れます。</li>
+      <li><b>GPU（NVIDIA）前提</b>：Macでは動かない、または極端に遅いことがあります。その場合はGoogle Colabが現実的です。</li>
+      <li><b>最終更新が古い</b>：2〜3年放置のリポジトリは、依存ライブラリ側の変更で動かないことがよくあります。</li>
+    </ul>
+
+  </div>
+
+  <div class="seo" data-l="en">
+    <h2>How to use this tool</h2>
+    <p>Open the project page on GitHub, copy the address from your browser, and paste it in. The <code>owner/repo</code> form (e.g. <code>openai/whisper</code>) also works, as do Hugging Face model, dataset, and Space URLs. Everything is checked by your browser asking public services (GitHub, Hugging Face, OSV.dev, OpenSSF Scorecard) directly. <b>The URLs you check and the results are never sent to the operator of this site.</b></p>
+
+    <h2>What is GitHub? (for non-programmers)</h2>
+    <p>GitHub is where developers around the world publish and share their code. Many powerful free AI tools appear there first. But “click download and it works” is not always true: each repository (one project folder) needs different preparation. This tool explains that preparation in plain language.</p>
+
+    <h3>Words worth knowing</h3>
+    <ul class="notes">
+      <li><b>Repository (repo)</b>: one project folder. One GitHub page = one repository.</li>
+      <li><b>README.md</b>: the manual. Always read it first.</li>
+      <li><b>clone</b>: copy the whole folder to your computer.</li>
+      <li><b>Releases</b>: the download page for finished builds. If it has a <code>.dmg</code> or <code>.zip</code>, you can install it like any normal app.</li>
+      <li><b>Issues</b>: the board for bug reports and questions. <b>When you hit an error, search its text here first</b> — someone usually had the same problem.</li>
+      <li><b>Star</b>: the number of bookmarks. More stars usually means more users and more help available.</li>
+    </ul>
+
+    <h2>Reading licenses (always check before using it for work)</h2>
+    <p>“Free to download” does not mean “free to use for anything”. Common licenses work like this:</p>
+    <table class="lic">
+      <tr><th>License</th><th>Commercial use</th><th>Notes</th></tr>
+      <tr><td>MIT / BSD / ISC / Apache-2.0</td><td>◎ Yes</td><td>Keep the copyright notice. Apache also requires noting your changes.</td></tr>
+      <tr><td>MPL-2.0 / LGPL</td><td>○ Yes</td><td>If you modify those files, you must publish those modifications.</td></tr>
+      <tr><td>GPL / AGPL</td><td>△ With conditions</td><td>You may have to publish the source of your whole program. AGPL applies even if you only run it as a web service.</td></tr>
+      <tr><td>CC BY-NC and other NC licenses</td><td>× No</td><td>Non-commercial only. Not for paid client work.</td></tr>
+      <tr><td>No license</td><td>× Generally no</td><td>All rights stay with the author. Ask the author before using it.</td></tr>
+    </table>
+    <p style="margin-top:10px;font-size:13px">* This tool gives a rough guide. For work or anything you publish, read the LICENSE file in the repository yourself. Trained models (weight files) often have a different license from the code, so check those especially carefully.</p>
+
+    <h2>Common stumbling blocks</h2>
+    <ul class="notes">
+      <li><b>Wrong Python version</b>: the most common problem is a project that needs 3.10 while you have 3.13. Match the version in the README.</li>
+      <li><b>Running <code>pip install</code> without a virtual environment</b>: this can break Python for your whole computer. Always install inside a <code>venv</code>.</li>
+      <li><b>Requires an NVIDIA GPU</b>: it may not run on a Mac, or run extremely slowly. Google Colab is the practical option then.</li>
+      <li><b>Not updated for a long time</b>: repositories left alone for 2–3 years often break because their libraries changed.</li>
+    </ul>
+  </div>
+
+  <!--tools:start-->
+  <div class="seo web-only" data-l="ja">
+    <h2>よく調べられているツールの診断結果</h2>
+    <ul class="toollist"><li><a href="/r/uvr">UVR</a></li><li><a href="/r/demucs">Demucs</a></li><li><a href="/r/whisper">Whisper</a></li><li><a href="/r/faster-whisper">faster-whisper</a></li><li><a href="/r/whisperx">WhisperX</a></li><li><a href="/r/rvc">RVC</a></li><li><a href="/r/basic-pitch">Basic Pitch</a></li><li><a href="/r/matchering">Matchering</a></li><li><a href="/r/comfyui">ComfyUI</a></li><li><a href="/r/stable-diffusion-webui">Stable Diffusion web UI</a></li><li><a href="/r/ffmpeg-wasm">ffmpeg.wasm</a></li><li><a href="/r/whisper-large-v3">whisper-large-v3</a></li></ul>
+  </div>
+  <!--tools:end-->
+
+  <div id="adNote" hidden>
+    <p class="adnote" data-l="ja">このサイトは Google AdSense の広告を表示しています。広告の表示に、Google が Cookie を使うことがあります。調べた URL はページのアドレスに入らないので、広告の読み込みでは送られません。</p>
+    <p class="adnote" data-l="en">This site shows ads from Google AdSense. Google may use cookies to show them. The URLs you check are not part of the page address, so they are not sent when ads load.</p>
+  </div>
+
+  <footer class="site">
+    <div><span data-l="ja">RepoCheck — GitHub・Hugging Face の安全性チェック（無料・登録不要）</span><span data-l="en">RepoCheck — a safety check for GitHub and Hugging Face (free, no sign-up)</span></div>
+    <div><span data-l="ja">運営：</span><span data-l="en">Made by </span><a href="https://youmix.info/" target="_blank" rel="noopener">YOUMIX</a> ・ <a href="https://repocheck.youmix.info/privacy" target="_blank" rel="noopener"><span data-l="ja">プライバシーポリシー</span><span data-l="en">Privacy policy</span></a><span id="donateWrap" hidden> ・ <a id="donateLink" href="#" target="_blank" rel="noopener"><span data-l="ja">☕ このツールを応援する</span><span data-l="en">☕ Support this tool</span></a></span></div>
+  </footer>
+  <p class="disclaimer" data-l="ja">※ RepoCheck の判定は、公開されている情報から危険の兆候を探す<b>目安</b>です。安全を保証するものではなく、見つけられない危険もあります。ダウンロード・インストール・利用は、ご自身の判断と責任で行ってください。本ツールの利用によって生じた損害について、運営者は責任を負いません。ライセンスの判定も目安のため、仕事や公開物で使う場合は、必ず LICENSE ファイルの本文をご確認ください。</p>
+  <p class="disclaimer" data-l="en">* RepoCheck’s results are a <b>rough guide</b> based on public information. They do not guarantee safety, and some dangers cannot be detected. Download, install, and use anything at your own judgment and risk. The operator is not liable for any damage resulting from use of this tool. License results are also only a guide; for work or anything you publish, always read the LICENSE file itself.</p>
+</div>
+
+<script src="i18n.js"></script>
+<script>
+/* ---------- 言語（日本語 / English / 简体中文 / 繁體中文 / 한국어） ----------
+   決め方：①Node.js の検証台から指定（window.__repocheckLang） ②URL の ?lang= ③画面右上のメニューで選んだもの（localStorage） ④端末の言語設定
+   文言は L('日本語','English') で書き分ける。値を差し込む文は LT('日本語の式','英語のひな形 {0}…',[値…]) で書く。
+   中国語・韓国語は i18n.js の訳を、英語の文（ひな形）を手がかりに引く。訳が無い文は英語のまま出す（検証台が「訳なし」として一覧にする）。
+   件数＋単語は plural(n,'day','days')。訳は i18n.js の '#days' に '{n} 天' の形で書く */
+if(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.copy) document.documentElement.classList.add('in-app');
+const LANG_KEY='repocheck_lang';
+const LANGS=['ja','en','zh-CN','zh-TW','ko'];
+function detectLang(){
+  if(LANGS.includes(window.__repocheckLang)) return window.__repocheckLang;
+  // URL の ?lang=ko などで指定されたら、それを優先（共有・検索エンジン用）
+  try{ const q=new URLSearchParams(location.search).get('lang'); if(LANGS.includes(q)) return q; }catch(e){}
+  try{ const s=localStorage.getItem(LANG_KEY); if(LANGS.includes(s)) return s; }catch(e){}
+  const n=(navigator.languages&&navigator.languages[0])||navigator.language||'ja';
+  if(/^ja/i.test(n)) return 'ja';
+  if(/^zh[-_](tw|hk|mo|hant)/i.test(n)) return 'zh-TW';
+  if(/^zh/i.test(n)) return 'zh-CN';
+  if(/^ko/i.test(n)) return 'ko';
+  return 'en';
+}
+let LANG=detectLang();
+window.__i18nMiss=new Set();   // 訳が見つからなかった英文（検証台が読む）
+function dict(){ return (window.I18N||{})[LANG]||{}; }
+function tr(v){                // 英語 → 今の言語（中国語・韓国語のときだけ呼ぶ）
+  if(typeof v==='string'){ const t=dict()[v]; if(t!==undefined) return t; if(/[A-Za-z]/.test(v)) window.__i18nMiss.add(v); return v; }
+  if(Array.isArray(v)) return v.map(tr);
+  if(v && typeof v==='object'){ const o={}; for(const k in v) o[k]=tr(v[k]); return o; }
+  return v;
+}
+function L(ja,en){ return LANG==='ja'?ja : LANG==='en'?en : tr(en); }
+function LT(ja,tpl,args){
+  if(LANG==='ja') return ja;
+  const en=LANG==='en';
+  // 差し込む値が訳のある短い英語（'Organization' など）なら、それも訳す
+  return (en?tpl:tr(tpl)).replace(/\{(\d+)\}/g,(m,i)=>{ const v=args[i]; if(en||typeof v!=='string') return v; const t=dict()[v]; return t!==undefined?t:v; });
+}
+function plural(n,one,many){
+  if(LANG==='ja'||LANG==='en') return n+' '+(n===1?one:many);
+  const t=dict()['#'+many]; if(t===undefined){ window.__i18nMiss.add('#'+many); return n+' '+many; }
+  return t.replace('{n}',n);
+}
+// ブラウザが読み込み時に書き換える部分（空白・&amp;・表の <tbody>）をならして、i18n.js の鍵と照合できるようにする。i18n/build.py と同じ処理
+function normHTML(s){ return s.replace(/<\/?tbody>/g,'').replace(/&amp;/g,'&').replace(/\s+/g,' ').trim(); }
+function locale(){ return {ja:'ja-JP',en:'en-US','zh-CN':'zh-CN','zh-TW':'zh-TW',ko:'ko-KR'}[LANG]; }
+function applyLang(){
+  if(document.documentElement) document.documentElement.lang=LANG;
+  document.title=L('RepoCheck｜GitHub・Hugging Face の安全性チェック','RepoCheck | Safety check for GitHub & Hugging Face');
+  const b=document.getElementById('langSel'); if(b) b.value=LANG;
+  // ページに書いてある説明文（data-l="en" の部品）を訳に差し替える
+  document.querySelectorAll('[data-l="en"]').forEach(el=>{
+    if(el.dataset.src===undefined) el.dataset.src=el.innerHTML;
+    const src=el.dataset.src;
+    el.innerHTML = (LANG==='en'||LANG==='ja') ? src : tr(normHTML(src));
+  });
+}
+
+const urlEl=document.getElementById('url'), goEl=document.getElementById('go');
+const statusEl=document.getElementById('status'), outEl=document.getElementById('out');
+
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+  urlEl.value=c.dataset.u || 'https://github.com/'+c.dataset.r; run();
+}));
+goEl.addEventListener('click',run);
+urlEl.addEventListener('keydown',e=>{ if(e.key==='Enter') run(); });
+document.getElementById('langSel').addEventListener('change',e=>{
+  LANG = LANGS.includes(e.target.value) ? e.target.value : 'en';
+  try{ localStorage.setItem(LANG_KEY,LANG); }catch(e){}
+  applyLang(); showTokenState();
+  // 表示中の結果があれば、問い合わせをやり直さずにその場で訳し直す
+  if(last){ showResult(false); setStatus(last.kind==='hf' ? '' : doneStatus()); }
+  else setStatus('');
+});
+
+function parseRepo(s){
+  s=(s||'').trim();
+  if(!s) return null;
+  let m=s.match(/github\.com[/:]([\w.\-]+)\/([\w.\-]+)/i);
+  if(!m) m=s.match(/^([\w.\-]+)\/([\w.\-]+)$/);
+  if(!m) return null;
+  return { owner:m[1], repo:m[2].replace(/\.git$/i,'') };
+}
+
+let busy=false;
+let last=null;   // 直近の診断の材料（言語を切り替えたときの訳し直し用）
+async function run(){
+  if(busy) return;
+  outEl.classList.remove('show');
+  // Hugging Face の URL なら、そちらの診断へ
+  const hf=parseHF(urlEl.value);
+  if(hf){
+    if(hf.bad){ setStatus(L('⚠ Hugging Face のモデル・データセット・Space のページの URL を貼ってください（例：https://huggingface.co/openai/whisper-large-v3）','⚠ Please paste the URL of a Hugging Face model, dataset, or Space page (e.g. https://huggingface.co/openai/whisper-large-v3)'),true); return; }
+    return runHF(hf);
+  }
+  const p=parseRepo(urlEl.value);
+  if(!p){ setStatus(L('⚠ GitHub か Hugging Face の URL を貼ってください（例：https://github.com/openai/whisper）','⚠ Please paste a GitHub or Hugging Face URL (e.g. https://github.com/openai/whisper)'),true); return; }
+  busy=true; goEl.disabled=true;
+  setStatus(L('GitHubから情報を取得しています…','Fetching information from GitHub…'));
+  try{
+    const base='https://api.github.com/repos/'+p.owner+'/'+p.repo;
+    const repo=await getJSON(base);
+    setStatus(L('中身と安全性を調べています…','Checking contents and safety…'));
+    const branch=repo.default_branch||'HEAD';
+    const [langs,tree,readme,releases,owner,advisories,scorecard]=await Promise.all([
+      getJSON(base+'/languages').catch(e=>({__err:e.message})),
+      getJSON(base+'/git/trees/'+branch+'?recursive=1').catch(e=>({__err:e.message})),
+      getJSON(base+'/readme').catch(e=>({__err:e.message})),
+      getJSON(base+'/releases?per_page=5').catch(e=>({__err:e.message})),
+      getJSON('https://api.github.com/users/'+repo.owner.login).catch(e=>({__err:e.message})),
+      getJSON(base+'/security-advisories?state=published&per_page=10').catch(e=>({__err:e.message})),
+      getScorecard(repo.full_name)
+    ]);
+    // ファイル一覧：tree API（blob=ファイル / tree=フォルダ）。allPaths は奥のフォルダまで含む全パス
+    const treeErr = !tree || tree.__err || !Array.isArray(tree.tree);
+    const allPaths = treeErr ? [] : tree.tree.map(t=>({path:t.path, type:t.type==='tree'?'dir':'file', size:t.size||0}));
+    const contents = allPaths.filter(t=>!t.path.includes('/')).map(t=>({name:t.path, type:t.type}));
+    const readmeText = (readme && !readme.__err && readme.content) ? decodeB64(readme.content) : '';
+
+    // インストール時に自動で動く処理を見るため、直下の package.json / setup.py の中身を取る（raw は API回数を消費しない）
+    const rawOf = name => fetch('https://raw.githubusercontent.com/'+repo.full_name+'/'+branch+'/'+name)
+      .then(r=>r.ok?r.text():Promise.reject(new Error('HTTP '+r.status)))
+      .catch(e=>({__err:e.message}));
+    const rootNames = new Set(contents.map(c=>c.name.toLowerCase()));
+    const [pkgRaw,setupRaw] = await Promise.all([
+      rootNames.has('package.json') ? rawOf('package.json') : null,
+      rootNames.has('setup.py') ? rawOf('setup.py') : null
+    ]);
+
+    setStatus(L('依存ライブラリの脆弱性を調べています…','Checking dependencies for known vulnerabilities…'));
+    const reqNames = contents.filter(c=>c.type==='file' && /^requirements[\w.-]*\.txt$/i.test(c.name)).map(c=>c.name).slice(0,4);
+    // ロックファイル（実際に入る全部品の版が書いてある）：間接的な部品まで照合するために読む
+    const [reqRaws, pyprojRaw, lockRaw, poetryLockRaw, uvLockRaw] = await Promise.all([
+      Promise.all(reqNames.map(n=>rawOf(n).then(t=>({name:n, text:t})))),
+      rootNames.has('pyproject.toml') ? rawOf('pyproject.toml') : null,
+      rootNames.has('package-lock.json') ? rawOf('package-lock.json') : null,
+      rootNames.has('poetry.lock') ? rawOf('poetry.lock') : null,
+      rootNames.has('uv.lock') ? rawOf('uv.lock') : null
+    ]);
+    const [pnpmLockRaw, yarnLockRaw, bunLockRaw] = await Promise.all([
+      rootNames.has('pnpm-lock.yaml') ? rawOf('pnpm-lock.yaml') : null,
+      rootNames.has('yarn.lock') ? rawOf('yarn.lock') : null,
+      rootNames.has('bun.lock') ? rawOf('bun.lock') : null
+    ]);
+    const bunLockb = rootNames.has('bun.lockb') && !rootNames.has('bun.lock');
+    const deps = await checkDeps({reqRaws, pyprojRaw, pkgRaw, lockRaw, poetryLockRaw, uvLockRaw, pnpmLockRaw, yarnLockRaw, bunLockRaw, bunLockb});
+
+    last={
+      repo,
+      langs:(langs&&!langs.__err)?langs:{},
+      contents, readmeText,
+      releases:Array.isArray(releases)?releases:[],
+      errs:{ tree: treeErr ? (tree&&tree.__err||null) : null, treeFailed: !!treeErr,
+             readme: (readme&&readme.__err)?readme.__err:null },
+      secInput:{repo, owner, allPaths, treeErr, truncated: !!(tree&&tree.truncated),
+        readme: readmeText, releases: Array.isArray(releases)?releases:[], advisories, scorecard, pkgRaw, setupRaw, deps}
+    };
+    showResult(true);
+    setStatus(doneStatus());
+  }catch(e){
+    setStatus('⚠ '+(e.message||e), true);
+  }finally{ busy=false; goEl.disabled=false; }
+}
+
+// 直近の診断を、今の言語で表示する（判定は言語ごとに文言が変わるので、表示のたびに作り直す）
+function showResult(scroll){
+  if(!last) return;
+  // hfCheck には種類（model / dataset / space）を渡す（last.kind は「Hugging Face の診断」という目印なので使わない）
+  if(last.kind==='hf'){ renderHF(last, hfCheck({...last, kind:last.t.kind}), scroll); return; }
+  const sec=securityCheck(last.secInput);
+  const errs={ tree: last.errs.treeFailed ? (last.errs.tree||L('ファイル一覧を取得できませんでした','Could not get the file list')) : null, readme:last.errs.readme };
+  render(last.repo, last.langs, last.contents, last.readmeText, last.releases, errs, sec, scroll);
+}
+function doneStatus(){
+  if(rateLeft===null) return '';
+  return LT('GitHubへの問い合わせ残り回数：この1時間であと '+rateLeft+' 回（1回の診断で約8回使います'+(ghToken()?'・トークンあり':'・トークンなし')+'）',
+           'GitHub requests left this hour: {0} (one check uses about 8; {1})',[rateLeft,(ghToken()?'token in use':'no token')]);
+}
+
+let rateLeft=null;
+
+/* ---------- GitHub のトークン（問い合わせ回数の上限を60回→5,000回に） ----------
+   Mac アプリ版：起動時に gh（GitHub公式コマンド）から受け取った値が window.__ghToken に入る（メモリのみ）
+   ブラウザ版  ：設定欄に貼った値を、このブラウザの localStorage に保存する
+   トークンは api.github.com への問い合わせにだけ付け、ほかのサイトには送らない */
+const TOKEN_KEY='repocheck_gh_token';
+function storedToken(){ try{ return localStorage.getItem(TOKEN_KEY)||''; }catch(e){ return ''; } }
+function ghToken(){ return (window.__ghToken||'') || storedToken(); }
+function showTokenState(){
+  const el=document.getElementById('tokenState'); if(!el) return;
+  if(window.__ghToken) el.textContent=L('✅ Mac アプリが gh のログインからトークンを受け取りました（1時間5,000回まで）','✅ The Mac app is using your gh login token (up to 5,000 requests per hour)');
+  else if(storedToken()) el.textContent=L('✅ このブラウザに保存したトークンを使います（1時間5,000回まで）','✅ Using the token saved in this browser (up to 5,000 requests per hour)');
+  else el.textContent=L('トークンなし（1時間60回まで）','No token (up to 60 requests per hour)');
+}
+document.getElementById('tokenSave').addEventListener('click',()=>{
+  const v=document.getElementById('tokenInput').value.trim();
+  if(!/^[A-Za-z0-9_]{20,255}$/.test(v)){ setStatus(L('トークンの形が正しくありません（英数字と _ だけのはずです）','That does not look like a token (it should contain only letters, digits and _)'),true); return; }
+  try{ localStorage.setItem(TOKEN_KEY,v); }catch(e){}
+  document.getElementById('tokenInput').value=''; showTokenState(); setStatus(L('トークンを保存しました','Token saved'));
+});
+document.getElementById('tokenClear').addEventListener('click',()=>{
+  try{ localStorage.removeItem(TOKEN_KEY); }catch(e){} showTokenState(); setStatus(L('保存したトークンを消しました','Saved token removed'));
+});
+applyLang();
+showTokenState();
+// OpenSSF Scorecard（Googleなどが運営する、オープンソースの開発体制の採点）。未採点のリポジトリは 404 になる
+async function getScorecard(fullName){
+  try{
+    const r=await fetch('https://api.securityscorecards.dev/projects/github.com/'+fullName,{headers:{'Accept':'application/json'}});
+    if(r.status===404) return {__none:true};
+    if(!r.ok) return {__err:'HTTP '+r.status};
+    return await r.json();
+  }catch(e){ return {__err:e.message}; }
+}
+
+function setStatus(t,err){ statusEl.textContent=t; statusEl.className='status'+(err?' err':''); }
+
+async function getJSON(u){
+  const headers={'Accept':'application/vnd.github+json'};
+  const tok=ghToken();
+  if(tok && u.startsWith('https://api.github.com/')) headers['Authorization']='Bearer '+tok;   // GitHub の API にだけ付ける
+  let r=await fetch(u,{headers});
+  if(r.status===401 && headers['Authorization']){   // トークンが無効（期限切れなど）なら、付けずにやり直す
+    delete headers['Authorization']; r=await fetch(u,{headers});
+    setStatus(L('⚠ トークンが無効だったため、トークンなしで問い合わせました（設定欄で貼り直してください）','⚠ The token was invalid, so the request was sent without it (paste a new one in the settings)'),true);
+  }
+  if(r.status===404) throw new Error(u.indexOf('/repos/')>-1 && u.split('/').length===6
+    ? L('リポジトリが見つかりません。URLが正しいか、非公開でないかご確認ください。','Repository not found. Check that the URL is correct and the repository is not private.')
+    : L('見つかりませんでした（404）','Not found (404)'));
+  if(r.status===403||r.status===429) throw new Error(ghToken()
+    ? L('GitHubのAPI利用制限に達しました（トークンありで1時間5,000回まで）。しばらく待ってからお試しください。','You reached the GitHub API limit (5,000 per hour with a token). Please wait a while and try again.')
+    : L('GitHubのAPI利用制限に達しました（トークンなしは1時間60回まで）。上の「問い合わせ回数を増やす」でトークンを設定すると5,000回に増えます。','You reached the GitHub API limit (60 per hour without a token). Set a token under “Raise the request limit” above to get 5,000.'));
+  const left=r.headers.get('x-ratelimit-remaining');
+  if(left!==null) rateLeft=Number(left);
+  if(!r.ok) throw new Error(LT('取得に失敗しました（HTTP '+r.status+'）','Request failed (HTTP {0})',[r.status]));
+  return r.json();
+}
+
+function decodeB64(b64){
+  try{
+    const bin=atob(b64.replace(/\s/g,''));
+    const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));
+    return new TextDecoder('utf-8').decode(bytes);
+  }catch(e){ return ''; }
+}
+function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- 安全性チェック ---------- */
+// 公開情報から「危険の兆候」を探す。見つからなくても安全の保証ではない（表示側でも必ずそう書く）
+const DAY=86400000;
+function ageDays(iso){ return Math.floor((Date.now()-new Date(iso))/DAY); }
+function ageText(d){
+  if(LANG!=='ja' && LANG!=='en') return d<60 ? plural(d,'day','days') : d<730 ? plural(Math.round(d/30),'month','months') : plural((d/365).toFixed(1),'year','years');
+  if(LANG==='en') return d<60 ? plural(d,'day','days') : d<730 ? plural(Math.round(d/30),'month','months') : (d/365).toFixed(1)+' years';
+  return d<60 ? d+'日' : d<730 ? Math.round(d/30)+'か月' : (d/365).toFixed(1)+'年';
+}
+function num(v){ return Number(v||0).toLocaleString(); }
+function listFiles(arr){
+  const a=arr.slice(0,6).map(f=>'<code>'+esc(f)+'</code>').join(L('、',', '));
+  return a+(arr.length>6?LT(' ほか '+(arr.length-6)+'件',' and {0} more',[(arr.length-6)]):'');
+}
+function hostList(arr){ return arr.map(h=>'<code>'+esc(h)+'</code>').join(L('、',', ')); }
+
+// ネットから取った命令をそのまま実行する書き方
+//   curl … | sh ／ bash <(curl …) ／ sh -c "$(curl …)"（Homebrew・Oh My Zsh 型）
+const CURL_EXEC=/(curl|wget)\s[^\n|]{0,200}\|\s*(sudo\s+)?(ba|z)?sh\b|\b(ba|z)?sh\s+<\(\s*(curl|wget)\s|\b(ba|z)?sh\s+-c\s+["']?\$\(\s*(curl|wget)\s/i;
+//   iwr … | iex ／ iex (iwr …) ／ iex (New-Object Net.WebClient).DownloadString(…)
+const IEX_EXEC=/(iwr|irm|invoke-webrequest|invoke-restmethod)[^\n]{0,200}\|\s*iex|\b(iex|invoke-expression)\s*\(?\s*\(?\s*(iwr|irm|invoke-webrequest|invoke-restmethod|new-object\s+(system\.)?net\.webclient)/i;
+// 上の書き方をしている行から、取得先（curl・iwr などの後ろの最初の URL）を取り出す
+function execHosts(text, lineRe, toolRe){
+  const urlRe=/(https?:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:\/[^\s|'"()]*)?|[a-z0-9-]+(?:\.[a-z0-9-]+)+\/[^\s|'"()]*)/i;
+  const out=[];
+  text.split('\n').forEach(line=>{
+    if(!lineRe.test(line)) return;
+    const at=line.search(toolRe); if(at<0) return;
+    const m=line.slice(at).replace(/^\S+/,'').match(urlRe);   // 道具の名前そのもの（curl など）は飛ばす
+    if(m) out.push(m[1].replace(/^https?:\/\//,'').toLowerCase());
+  });
+  return out;
+}
+
+// README などの文章から、危険な言い回し・怪しい誘導先を探す（GitHub と Hugging Face の両方で使う）
+//   o.trusted / o.established … 実績の目安（securityCheck の説明を参照）
+//   o.homepage / o.fullName   … 作者自身の配布元を見分けるため（公式インストーラの判定）
+function readmeSignals(R, o, danger, warn, info){
+  // key は判定の種類（言語に関係なく同じ）。表示する文言は t / x
+  const pats=[
+    {key:'av', lv:'d', re:/(disable|turn\s*off|deactivate|pause)\s+(your\s+)?(anti-?virus|windows\s*defender|defender|real-?time\s*protection)/i,
+     t:L('「ウイルス対策を切って」と書かれています','It asks you to turn off your antivirus'), x:L('正規のソフトがウイルス対策を切るよう求めることは、まずありません。マルウェアの典型的な手口です。','Legitimate software almost never asks you to disable your antivirus. This is a classic malware trick.')},
+    {key:'av', lv:'d', re:/(ウイルス対策|ウィルス対策|セキュリティソフト|ディフェンダー|Defender)[^\n]{0,15}(オフ|無効|切っ|切る|停止)/i,
+     t:L('「ウイルス対策を切って」と書かれています','It asks you to turn off your antivirus'), x:L('正規のソフトがウイルス対策を切るよう求めることは、まずありません。マルウェアの典型的な手口です。','Legitimate software almost never asks you to disable your antivirus. This is a classic malware trick.')},
+    {key:'zip', lv:'d', re:/(\b(zip|rar|7z|archive)\b|アーカイブ|圧縮ファイル|解凍)[^.。\n]{0,30}(\bpassword\b|パスワード)|(\bpassword\b|パスワード)\s*[:：=は]\s*\S+[^.。\n]{0,30}(\b(zip|rar|7z|archive)\b|アーカイブ|圧縮ファイル|解凍)/i,
+     t:L('パスワード付きの圧縮ファイルについて書かれています','It mentions a password-protected archive'), x:L('パスワードで鍵をかけると、ウイルス対策ソフトが中身を検査できなくなります。それを狙った手口として非常によく使われます。','A password stops antivirus software from scanning what is inside. This is a very common trick for exactly that reason.')},
+    {key:'crack', lv:'d', re:/\b(cracked|crack\s+(for|download)|keygen|activator|serial\s*key|free\s*robux|aimbot|wallhack|spoofer)\b/i,
+     t:L('「crack」「keygen」など、不正利用を思わせる言葉があります','It uses words like “crack” or “keygen” that suggest piracy or cheating'), x:L('有料ソフトの無料化やゲームのチートをうたうリポジトリは、ほぼ確実にウイルス配布が目的です。','Repositories that promise free paid software or game cheats are almost always distributing malware.')},
+    {key:'enc', lv:'d', re:/powershell[^\n]{0,40}\s-(e|enc|encodedcommand)\s+[A-Za-z0-9+\/=]{20,}/i,
+     t:L('読めない形に変換された命令（エンコード済みPowerShell）があります','It contains an unreadable (encoded) PowerShell command'), x:L('何をするのか読めない形にしてある命令は、中身を隠す意図があると考えるべきです。','A command deliberately made unreadable should be assumed to be hiding what it does.')},
+    // 「Win+R を押してこれを貼って」型（ClickFix）でよく使われる、隠れてダウンロード・実行する命令
+    {key:'clickfix', lv:'d', re:/mshta(\.exe)?\s+["']?https?:\/\/|certutil(\.exe)?\s[^\n]{0,40}-urlcache[^\n]{0,80}https?:\/\/|powershell(\.exe)?[^\n]{0,60}\s-w(indowstyle)?\s+h(idden)?\b[^\n]{0,200}(https?:\/\/|\biwr\b|\birm\b|downloadstring|invoke-webrequest|invoke-restmethod)/i,
+     t:L('隠れてファイルを取ってきて動かす命令があります（mshta・certutil・画面を隠した PowerShell）','It contains commands that secretly download and run files (mshta, certutil, hidden-window PowerShell)'),
+     x:L('「Win+R を押してこれを貼って」と頼む手口でよく使われる命令です。正規のソフトの使い方で、これらを貼らせることはまずありません。','These commands are typical of scams that ask you to “press Win+R and paste this”. Legitimate software almost never asks you to paste them.')},
+    {key:'admin', lv:'w', re:/run\s+(it\s+|this\s+|the\s+\w+\s+)?as\s+(an\s+)?administrator|管理者として実行|管理者権限で実行/i,
+     t:L('「管理者として実行」を求めています','It asks you to “Run as administrator”'), x:L('管理者権限で動かすと、パソコンのどこでも書き換えられる状態になります。本当に必要か確認してください。','With administrator rights it can change anything on your computer. Check whether that is really necessary.')},
+    // 「誤検知」という言葉だけでは反応しない（VAD などの技術用語の false positive に誤反応したため）。
+    // ウイルス対策ソフトの話と一緒に書かれているときだけ注意を出す
+    {key:'fp', lv:'w', re:/(anti-?virus|defender|virustotal|smartscreen|ウイルス|セキュリティソフト)[^\n]{0,80}(false\s*positive|誤検知)|(false\s*positive|誤検知)[^\n]{0,80}(anti-?virus|defender|virustotal|smartscreen|ウイルス|セキュリティソフト)/i,
+     t:L('「ウイルス対策の誤検知です」という説明があります','It says antivirus warnings are “false positives”'), x:L('本当に誤検知の場合もありますが、マルウェア配布者が警告を無視させるためによく使う言い訳でもあります。','Sometimes that is true, but it is also a common excuse malware authors use to get you to ignore warnings.')},
+    {key:'curl', lv:'w', re:CURL_EXEC,
+     t:L('ネットから落とした命令を、そのまま実行する手順があります（curl … | sh）','It tells you to run a script straight from the internet (curl … | sh)'), x:L('中身を見ないまま実行する形です。有名なツールでも使われる方法ですが、実行前にそのURLを開いて中身を確認するのが安全です。','This runs code without you seeing it first. Well-known tools use it too, but it is safer to open the URL and read the script before running it.')},
+    {key:'iex', lv:'w', re:IEX_EXEC,
+     t:L('ネットから落とした命令を、そのまま実行する手順があります（PowerShell の iwr … | iex）','It tells you to run a script straight from the internet (PowerShell iwr … | iex)'), x:L('中身を見ないまま実行する形です。実行前にそのURLを開いて中身を確認するのが安全です。','This runs code without you seeing it first. It is safer to open the URL and read the script before running it.')}
+  ];
+  // 有名なツールの公式インストーラ。ここだけを「ネットから落として実行」している場合は、注意ではなく参考にする
+  // （uv の astral.sh、proto の moonrepo.dev など。clear-filler・OpenCut で誤報になったため）
+  const KNOWN_INSTALLERS=/^(astral\.sh|bun\.sh|moonrepo\.dev|sh\.rustup\.rs|get\.docker\.com|deno\.land|raw\.githubusercontent\.com\/Homebrew|get\.pnpm\.io|fnm\.vercel\.app|ollama\.com|install\.python-poetry\.org|pyenv\.run|get\.volta\.sh|sdkman\.io)(\/|:|$)/i;   // 直後が「/」か終わりのときだけ（astral.sh.evil.io のような偽装を通さない）
+  const pipeHosts=re=>[...R.matchAll(re)].map(m=>(m[1]||'').replace(/^https?:\/\//,'').toLowerCase());
+  // プロジェクト自身の配布元：ホームページと同じホスト、または自分のリポジトリ（raw.githubusercontent.com/作者/名前/）
+  // ホームページ欄は持ち主が自由に書けるので、o.trusted のリポジトリだけ認める（nvm・bun・ax・llama.cpp で誤報）
+  const homeHost=(()=>{ try{ return o.homepage ? new URL(/^https?:/.test(o.homepage)?o.homepage:'https://'+o.homepage).host.toLowerCase().replace(/^www\./,'') : ''; }catch(e){ return ''; } })();
+  const ownRepo=(o.fullName||'').toLowerCase();
+  // 例：ホームページ winutil.christitus.com → christitus.com も、pi-hole.net → install.pi-hole.net も同じ持ち主
+  // ただし github.io・vercel.app などの誰でも借りられる共用の住所は、ドメインが同じでも別人なので完全一致だけ
+  const SHARED_HOSTING=/(^|\.)(github\.io|gitlab\.io|netlify\.app|vercel\.app|pages\.dev|workers\.dev|web\.app|firebaseapp\.com|herokuapp\.com|readthedocs\.io|onrender\.com|glitch\.me|githubusercontent\.com|blogspot\.com|wordpress\.com|notion\.site)$/i;
+  const baseDomain=h=>{ const p=h.split('.'); const two=/^(co|ne|or|ac|go|com|net|org|gov|edu)\.[a-z]{2}$/i.test(p.slice(-2).join('.')); return p.slice(two?-3:-2).join('.'); };
+  const sameOwnerHost=h=>{ if(!homeHost) return false; if(h===homeHost) return true; if(SHARED_HOSTING.test(homeHost)||SHARED_HOSTING.test(h)) return false; return baseDomain(h)===baseDomain(homeHost); };
+  const isOwn=h=>o.trusted && (sameOwnerHost(h.split('/')[0].replace(/^www\./,'')) || (ownRepo && (h.startsWith('raw.githubusercontent.com/'+ownRepo+'/') || h.startsWith('github.com/'+ownRepo+'/'))));
+  const onlyKnown=hosts=>hosts.length>0 && hosts.every(h=>KNOWN_INSTALLERS.test(h)||isOwn(h));
+  const seen=new Set();
+  pats.forEach(p=>{
+    if(seen.has(p.key) || !p.re.test(R)) return;
+    seen.add(p.key);
+    if(p.key==='curl' || p.key==='iex'){
+      const hosts=execHosts(R, p.key==='curl'?CURL_EXEC:IEX_EXEC, p.key==='curl'?/\b(curl|wget)\s/i:/\b(iwr|irm|invoke-webrequest|invoke-restmethod|downloadstring)\b/i);
+      if(onlyKnown(hosts)){
+        const own=hosts.some(h=>isOwn(h)&&!KNOWN_INSTALLERS.test(h));
+        const shown=hostList([...new Set(hosts.map(h=>h.startsWith('raw.githubusercontent.com/')?h.split('/').slice(0,3).join('/'):h.split('/')[0]))]);
+        info.push({t: own?L('このプロジェクト自身の公式インストーラを使う手順があります','It uses this project’s own official installer'):L('有名なツールの公式インストーラを使う手順があります','It uses the official installer of a well-known tool'),
+          x:LT('取得先：'+shown+'。'+(own?'作者自身のサイトやリポジトリからの取得です。気になるときは、実行前にそのURLを開いて中身を読めます。':'広く使われている公式の配布元です。'),
+              'Source: {0}. {1}',[shown,(own?'It comes from the author’s own site or repository. If you are unsure, open the URL and read the script before running it.':'This is a widely used official source.')])});
+        return;
+      }
+    }
+    // 実績のあるリポジトリ（o.trusted）では一段階下げる。システムを調整するツールが、機能の説明として書いていることが多いため
+    if(o.trusted && p.key==='admin'){
+      info.push({t:L('管理者権限で動かす手順があります','It is run with administrator rights'), x:L('システム全体を変更するツールでは必要な手順です。実績のあるリポジトリですが、何を変更するツールなのかは確かめてから使ってください。','Tools that change system-wide settings need this. The repository has a track record, but make sure you know what it will change before using it.')});
+      return;
+    }
+    if(o.trusted && p.key==='clickfix'){
+      warn.push({t:L('隠れてファイルを取ってきて動かす命令が書かれています','It mentions commands that secretly download and run files'), x:L('実績のあるリポジトリなので、システム管理の手順として書かれている可能性があります。ただ、ウイルス配布でよく使われる命令です。何をするのか確かめてから使ってください。','The repository has a track record, so this may be part of system administration instructions. Still, these commands are common in malware campaigns. Make sure you know what they do before using them.')});
+      return;
+    }
+    if(o.trusted && p.key==='fp'){
+      info.push({t:L('ウイルス対策の誤検知について書かれています','It mentions antivirus false positives'), x:L('実績のあるリポジトリなので、開発者が誤検知への対応を説明している可能性が高いです。それでも、配布物は Releases から落としてください。','The repository has a track record, so the developer is most likely explaining how they dealt with false positives. Still, download files only from Releases.')});
+      return;
+    }
+    if(o.trusted && p.key==='av'){
+      warn.push({t:L('ウイルス対策（Defender など）を無効にする話が書かれています','It talks about disabling antivirus (Defender, etc.)'), x:L('実績のあるリポジトリなので、Windows を調整するツールの機能の説明である可能性が高いです。ただ、ウイルス対策を切るとパソコンが無防備になります。本当に必要か確かめてください。','The repository has a track record, so this is most likely describing a feature of a Windows tweaking tool. Still, turning off antivirus leaves your computer unprotected. Make sure you really need it.')});
+      return;
+    }
+    (p.lv==='d'?danger:warn).push({t:p.t, x:p.x});
+  });
+
+  const linkHosts=re=>[...new Set([...R.matchAll(re)].map(m=>m[1].toLowerCase()))];
+  // 匿名アップローダー・短縮URL・チャットの添付：検査を逃れる誘導先としてよく使われる
+  // Discord・Telegram の「参加用リンク」は交流の場への招待で、ファイルの配布先ではないので別扱い（PySceneDetect・OpenCut・silero-vad で誤報）。
+  // ファイルが直接置かれる cdn.discordapp.com は引き続き要注意
+  const riskyHosts=linkHosts(/https?:\/\/(?:www\.)?(mediafire\.com|mega\.nz|mega\.co\.nz|bit\.ly|tinyurl\.com|cutt\.ly|is\.gd|cdn\.discordapp\.com|anonfiles?\.\w+|gofile\.io|pixeldrain\.com|telegra\.ph|rentry\.\w+|transfer\.sh|4shared\.com|sendspace\.com)/gi);
+  const communityHosts=linkHosts(/https?:\/\/(?:www\.)?(discord\.gg|discord\.com\/invite|t\.me)/gi);
+  if(communityHosts.length) info.push({t:L('交流の場（Discord・Telegram）への参加用リンクがあります','It has invite links to a community (Discord / Telegram)'),
+    x:LT('リンク先：'+hostList(communityHosts)+'。開発者や利用者が集まる場への招待で、多くのリポジトリにあります。そこで配られるファイルを落とすのは避けてください。','Links: {0}. These are invitations to where developers and users gather, and many repositories have them. Avoid downloading files handed out there.',[hostList(communityHosts)])});
+  // 一般的なクラウドストレージ：AIの学習済みモデルの配布などで正規にもよく使われる
+  const cloudHosts=linkHosts(/https?:\/\/(?:www\.)?(drive\.google\.com|dropbox\.com|onedrive\.live\.com|1drv\.ms)/gi);
+  if(riskyHosts.length && o.established) info.push({t:L('外部のアップローダーや短縮URLへのリンクがあります','It links to file hosts or short URLs outside GitHub'),
+    x:LT('リンク先：'+hostList(riskyHosts)+'。長く使われてきたリポジトリなので作者の配布先の可能性が高いですが、実行ファイルはできるだけ GitHub の Releases から落としてください。','Links: {0}. This is a long-established repository, so these are probably the author’s own download links, but get executables from GitHub Releases where possible.',[hostList(riskyHosts)])});
+  else if(riskyHosts.length) warn.push({t:L('匿名のアップローダーや短縮URLへのリンクがあります','It links to anonymous file hosts or short URLs'),
+    x:LT('リンク先：'+hostList(riskyHosts)+'。GitHubの外にある、誰がアップしたか分からない場所への誘導は、検査を逃れる手口としてよく使われます。','Links: {0}. Sending you to places outside GitHub where anyone can upload is a common way to avoid scanning.',[hostList(riskyHosts)])});
+  if(cloudHosts.length) info.push({t:L('クラウドストレージへのリンクがあります','It links to cloud storage'),
+    x:LT('リンク先：'+hostList(cloudHosts)+'。学習済みモデルなど大きなファイルの配布でよく使われる正規の方法です。ただし実行ファイル（.exe など）をここから落とすのは避けてください。','Links: {0}. This is a common, legitimate way to share large files such as trained models. Avoid downloading executables (.exe etc.) from there.',[hostList(cloudHosts)])});
+}
+
+function securityCheck(x){
+  const {repo, owner, allPaths, readme, releases, advisories, scorecard, pkgRaw, setupRaw, deps}=x;
+  const danger=[], warn=[], good=[], info=[];
+  // README に加えて、リリースノート（Releases の説明文）も読む。
+  // 「README はきれいで、配布ページに『パスワードは 1234』と書く」手口があるため
+  const R=(readme||'')+'\n'+(releases||[]).map(r=>r&&r.body||'').join('\n');
+
+  // 1. 作者アカウントの年齢と実績
+  if(owner && !owner.__err){
+    const d=ageDays(owner.created_at);
+    const who=LT((owner.type==='Organization'?'組織アカウント':'個人アカウント')+'「'+esc(owner.login)+'」',
+                '{0} “{1}”',[(owner.type==='Organization'?'Organization':'Personal account'),esc(owner.login)]);
+    const stats=LT('フォロワー '+num(owner.followers)+'人・公開リポジトリ '+num(owner.public_repos)+'件。',
+                  ' {0} followers, {1} public repositories.',[num(owner.followers),num(owner.public_repos)]);
+    if(d<30) danger.push({t:LT('作者のアカウントが作られて '+d+' 日しか経っていません','The author’s account is only {0} old',[plural(d,'day','days')]),
+      x:LT(who+'。人気ツールの偽物は、使い捨ての新しいアカウントで公開されることがよくあります。'+stats, '{0}. Fakes of popular tools are often published from brand-new throwaway accounts.{1}',[who,stats])});
+    else if(d<180) warn.push({t:LT('作者のアカウントがまだ新しめです（'+ageText(d)+'前に作成）','The author’s account is fairly new (created {0} ago)',[ageText(d)]),
+      x:LT(who+'。新しいこと自体は問題ではありませんが、実績を確認してください。'+stats, '{0}. Being new is not a problem in itself, but check their track record.{1}',[who,stats])});
+    else good.push({t:LT('作者のアカウントは '+ageText(d)+'前から存在します','The author’s account has existed for {0}',[ageText(d)]), x:LT(who+'。'+stats, '{0}.{1}',[who,stats])});
+    if(owner.type==='User' && owner.followers<5 && owner.public_repos<=3 && repo.stargazers_count>=500)
+      warn.push({t:L('人気のわりに、作者の実績がほとんどありません','The author has almost no track record for such a popular repository'),
+        x:LT('Star '+num(repo.stargazers_count)+'個に対して、作者のフォロワー '+owner.followers+'人・公開リポジトリ '+owner.public_repos+'件です。Starを買って人気を装っている可能性があります。',
+            '{0} stars, but the author has {1} and {2}. The stars may have been bought to fake popularity.',[num(repo.stargazers_count),plural(owner.followers,'follower','followers'),plural(owner.public_repos,'public repository','public repositories')])});
+  } else info.push({t:L('作者アカウントの情報を取得できませんでした','Could not get information about the author’s account'), x:esc(owner&&owner.__err||'')});
+
+  // 2. リポジトリの年齢と Star の釣り合い
+  const rd=ageDays(repo.created_at), st=repo.stargazers_count, fk=repo.forks_count;
+  // 信頼度の目安。誤報を減らすために「注意」を「参考」に下げる場面だけで使う（危険信号は下げない）。
+  //   trusted     … 作者が2年以上前からいて、Star 300以上、公開から60日以上、コピーではない（使い捨てアカウントの偽物は満たせない）
+  //   established … さらに公開2年以上・Star 1000以上
+  const ownerDays = (owner && !owner.__err) ? ageDays(owner.created_at) : 0;
+  // 作者のアカウントが新しくても、公開2年以上・Star 5,000以上なら実績ありとみなす。
+  // 人気リポジトリが新しく作った組織アカウントへ引っ越すのはよくある（chatbox で誤報）。古くて大人気のリポジトリを偽装するのは非常に難しい
+  const trusted = !repo.fork && st>=300 && rd>=60 && (ownerDays>=730 || (rd>=730 && st>=5000));
+  const established = trusted && rd>=730 && st>=1000;
+  // 新作が急に Star を集めること自体はよくある（imozuru で誤報）。水増しは Fork がほとんど付かないので、Fork も少ないときだけ注意にする
+  if(rd<30 && st>=300 && fk*30<st) warn.push({t:LT('作られて '+rd+' 日で Star が '+num(st)+' 個あるのに、Fork は '+num(fk)+' 個だけです','Created {0} ago with {1} stars, but only {2}',[plural(rd,'day','days'),num(st),plural(fk,'fork','forks')]),
+    x:L('Starを買って人気を装う手口があります。実際に使われているなら Fork も増えていくのが普通です。本当に話題の新作という場合もあるので、SNSやニュースで実在を確かめてください。',
+        'Buying stars to fake popularity is a known trick. A tool that people really use usually gets forks too. It may genuinely be a hot new project, so confirm it on social media or in the news.')});
+  else if(rd<30 && st>=300) info.push({t:LT('作られて '+rd+' 日で Star '+num(st)+' 個・Fork '+num(fk)+' 個の新作です','A new project: created {0} ago, {1} stars, {2} forks',[plural(rd,'day','days'),num(st),num(fk)]),
+    x:L('急に注目されています。Fork も付いていて、実際に使われている様子です。','It is getting attention quickly, and the forks suggest people are actually using it.')});
+  if(st>=1000 && rd<365 && fk*50<st) warn.push({t:L('Star の数に比べて、コピー（Fork）が極端に少ないです','Very few forks for the number of stars'),
+    x:LT('Star '+num(st)+'個に対して Fork '+num(fk)+'個。実際に使われているツールなら、普通はもっと Fork されます。Starの水増しの兆候のひとつです。',
+        '{0} stars but only {1} forks. A tool that people actually use is usually forked more. This is one sign of inflated stars.',[num(st),num(fk)])});
+  if(rd>=730 && st>=1000) good.push({t:LT('リポジトリは '+ageText(rd)+'前から公開され、Star '+num(st)+'個','Public for {0}, with {1} stars',[ageText(rd),num(st)]),
+    x:L('長く多くの人に使われてきた実績があります。','It has a long track record of use by many people.')});
+
+  // 3. 本家のコピー（フォーク）か
+  // 実績のある作者が独自に育てている派生版（yt-dlp/FFmpeg-Builds で誤報）。偽物のフォークは Star がほぼ付かないので見分けられる
+  const forkTrusted = repo.fork && ownerDays>=730 && st>=300 && rd>=60;
+  if(forkTrusted && repo.parent)
+    info.push({t:LT('これは「'+esc(repo.parent.full_name)+'」をもとにした派生版（フォーク）です','This is a derived version (fork) of “{0}”',[esc(repo.parent.full_name)]),
+      x:LT('作者のアカウントにも実績があり、Star も '+num(st)+'個付いていて、独自に管理されている派生版のようです。 <a href="'+repo.parent.html_url+'" target="_blank" rel="noopener">もとのリポジトリを開く →</a>',
+          'The author has a track record and it has {0} stars, so it looks like an independently maintained version. <a href="{1}" target="_blank" rel="noopener">Open the original repository →</a>',[num(st),repo.parent.html_url])});
+  else if(repo.fork && repo.parent)
+    warn.push({t:LT('これは「'+esc(repo.parent.full_name)+'」のコピー（フォーク）です','This is a copy (fork) of “{0}”',[esc(repo.parent.full_name)]),
+      x:LT('本家をコピーして悪意のある処理を足し、本家のふりをする手口があります。特別な理由がなければ本家を使ってください。 <a href="'+repo.parent.html_url+'" target="_blank" rel="noopener">本家を開く →</a>',
+          'A known trick is to copy the original, add something malicious, and pretend to be the original. Unless you have a specific reason, use the original. <a href="{0}" target="_blank" rel="noopener">Open the original →</a>',[repo.parent.html_url])});
+
+  // 4. 不具合報告の欄が閉じられている
+  if(!repo.has_issues && repo.has_discussions)
+    info.push({t:L('不具合報告は Issues ではなく Discussions（掲示板）で受け付けています','Bug reports go to Discussions (a forum) instead of Issues'), x:L('利用者が問題を書き込める場所はあります。','Users do have a place to report problems.')});
+  else if(!repo.has_issues && established)
+    info.push({t:L('GitHub の Issues 欄は閉じられています','The GitHub Issues tab is turned off'), x:L('長く使われてきたリポジトリなので、独自の不具合管理サイトやフォーラムで受け付けている可能性が高いです。','This is a long-established repository, so it most likely uses its own bug tracker or forum.')});
+  else if(!repo.has_issues)
+    warn.push({t:L('不具合報告（Issues）の欄が閉じられています','Bug reports (Issues) are turned off'), x:L('利用者が「ウイルスが入っていた」と書き込めない状態です。悪質なリポジトリでよく見られます（作者が単に管理していないだけの場合もあります）。','Users cannot post warnings such as “this contains malware”. This is common in malicious repositories (though the author may simply not be maintaining it).')});
+
+  // 5. README の危険な言い回し（Hugging Face の診断でも使うので関数に分けてある）
+  readmeSignals(R, {trusted, established, homepage:repo.homepage, fullName:repo.full_name}, danger, warn, info);
+
+  // 6. リポジトリ内のファイル
+  const files=allPaths.filter(f=>f.type==='file').map(f=>f.path);
+  const dblRe=/\.(pdf|docx?|xlsx?|jpe?g|png|gif|txt|mp3|mp4|wav)\.(exe|scr|com|pif|bat|cmd|vbs|js|lnk)$/i;
+  // .vbs・.wsf・.hta はテキストのスクリプトで中身を読める（scrcpy・notepad++ で誤報）。.vbe・.jse は読めない形に変換済みなので実行ファイル側に残す
+  const binRe=/\.(exe|scr|msi|pif|lnk|vbe|jse|cpl)$/i;
+  // テスト用の見本ファイルの置き場（cypress の foo.exe・electron の shortcut.lnk で誤報）
+  const testDirRe=/(^|\/)(tests?|spec|specs|__tests__|fixtures?|examples?|testdata|test-data|samples?)\//i;
+  const dlls=files.filter(f=>/\.dll$/i.test(f));
+  // リポジトリ内では、後ろが .js の二重拡張子は見ない。Web フレームワークでは robots.txt.js のような名前が正規の命名ルール（sveltejs/kit で誤報）。
+  // 配布ファイル（Releases）では .js も含めて今までどおり見る
+  const dbls=files.filter(f=>dblRe.test(f) && !/\.js$/i.test(f));
+  // Microsoft 公式の再頒布パッケージ（Visual C++ ランタイム）は、Windows 版の同梱用によくある（PySceneDetect で誤報）
+  const isMsRedist=f=>/(^|\/)vc_?redist[^\/]*\.exe$/i.test(f);
+  const redists=files.filter(isMsRedist);
+  const binsAll=files.filter(f=>binRe.test(f)&&!dblRe.test(f)&&!isMsRedist(f));
+  const testBins=binsAll.filter(f=>testDirRe.test(f));
+  const bins=binsAll.filter(f=>!testDirRe.test(f));
+  if(redists.length) info.push({t:L('Microsoft の Visual C++ 再頒布パッケージが同梱されています','It bundles the Microsoft Visual C++ Redistributable'), x:LT(listFiles(redists)+'。Windows 版の配布物に同梱するためのよくある形です。','{0}. This is a normal thing to bundle with a Windows build.',[listFiles(redists)])});
+  const scripts=files.filter(f=>/\.(bat|cmd|ps1|vbs|wsf|hta)$/i.test(f));
+  const archives=files.filter(f=>/\.(zip|rar|7z)$/i.test(f));
+  const srcCount=files.filter(f=>/\.(py|ipynb|js|ts|mjs|cjs|jsx|tsx|vue|svelte|astro|go|rs|c|cc|cpp|cxx|h|hpp|m|mm|swift|kt|kts|java|scala|cs|fs|vb|rb|php|lua|sh|bash|zsh|ps1|psm1|psd1|pl|pm|r|jl|dart|zig|nim|ex|exs|erl|hs|clj|el)$/i.test(f)).length;
+  // 文字の向きを変える見えない文字（RLO など）で「resume‮fdp.exe」を「resumeexe.pdf」に見せかける手口
+  const bidiRe=/[\u202A-\u202E\u2066-\u2069\u200E\u200F]/;
+  const bidi=[...files.filter(f=>bidiRe.test(f)), ...releases.flatMap(r=>(r.assets||[]).map(a=>a.name)).filter(n=>bidiRe.test(n))];
+  if(bidi.length) danger.push({t:L('見えない文字で、ファイル名の向きを偽装しています','File names use invisible characters to disguise their extension'),
+    x:LT(listFiles(bidi.map(f=>f.replace(/[\u202A-\u202E\u2066-\u2069\u200E\u200F]/g,'⟨見えない文字⟩')))+'。文字の並ぶ向きを逆にする見えない文字で、「.exe」を「.pdf」などに見せかける手口です。開かないでください。',
+        '{0}. An invisible character that reverses text direction is used to make “.exe” look like “.pdf” or similar. Do not open them.',[listFiles(bidi.map(f=>f.replace(/[\u202A-\u202E\u2066-\u2069\u200E\u200F]/g,L('⟨見えない文字⟩','⟨invisible⟩'))))])});
+  if(dbls.length) danger.push({t:L('拡張子を偽装したファイルがあります','It has files with disguised extensions'), x:LT(listFiles(dbls)+'。「資料.pdf.exe」のように文書や画像に見せかけた実行ファイルです。開かないでください。','{0}. These are executables pretending to be documents or images, like “report.pdf.exe”. Do not open them.',[listFiles(dbls)])});
+  if(!x.treeErr && srcCount===0 && (archives.length||bins.length||dlls.length))
+    danger.push({t:L('ソースコードが無く、圧縮ファイルや実行ファイルだけが置かれています','There is no source code, only archives or executables'), x:L('READMEと配布ファイルだけのリポジトリは、GitHubの信用を借りてウイルスを配る典型的な形です。','A repository with only a README and downloads is the classic way to spread malware while borrowing GitHub’s credibility.')});
+  // 大きなプロジェクトがビルド用の道具や同梱物として .exe を置くのはよくある（uv・VS Code・PowerToys・Ventoy で誤報）
+  else if(bins.length && trusted && srcCount>=50)
+    info.push({t:LT('ビルドや配布のための実行ファイルが '+bins.length+' 個同梱されています','It bundles {0} used for building or packaging',[plural(bins.length,'executable','executables')]), x:LT(listFiles(bins)+'。ソースコードの多い大きなプロジェクトではよくある形です。使うときは Releases の配布物を落としてください。','{0}. This is normal for large projects with lots of source code. To use the tool, download it from Releases.',[listFiles(bins)])});
+  else if(bins.length)
+    warn.push({t:L('ソースコードの中に実行ファイル（.exe など）が直接置かれています','Executables (.exe etc.) are stored directly among the source code'), x:LT(listFiles(bins)+'。中身を確認できない完成品のファイルです。ソースから作った配布物は、ふつう Releases に置かれます。','{0}. These are prebuilt files whose contents you cannot inspect. Builds made from source normally go in Releases.',[listFiles(bins)])});
+  if(testBins.length) info.push({t:LT('テスト用の見本として実行ファイル形式のものが '+testBins.length+' 個あります',testBins.length===1?'There is 1 executable-type file used as test samples':'There are {0} executable-type files used as test samples',[testBins.length]), x:LT(listFiles(testBins)+'。テスト用のフォルダの中にあり、実際に使うものではありません。','{0}. They are inside test folders and are not part of the actual tool.',[listFiles(testBins)])});
+  if(dlls.length) info.push({t:LT('同梱のライブラリ（.dll）が '+dlls.length+' 個あります','It bundles {0} (.dll)',[plural(dlls.length,'library','libraries')]), x:LT(listFiles(dlls)+'。プログラムの部品として同梱されるのはよくあることです。','{0}. Bundling libraries as program components is common.',[listFiles(dlls)])});
+  if(scripts.length) info.push({t:LT('Windows用のスクリプト（.bat / .ps1 / .vbs など）が '+scripts.length+' 個あります','It has {0} (.bat / .ps1 / .vbs etc.)',[plural(scripts.length,'Windows script','Windows scripts')]), x:L('よくある構成です。実行前にテキストエディタで開けば中身を読めます。','This is common. You can read them in a text editor before running them.')});
+  if(archives.length && srcCount>0) info.push({t:LT('リポジトリ内に圧縮ファイルが '+archives.length+' 個あります','The repository contains {0}',[plural(archives.length,'archive','archives')]), x:LT(listFiles(archives)+'。','{0}.',[listFiles(archives)])});
+  if(x.truncated) info.push({t:L('ファイル数が多すぎて、全部は調べきれませんでした','Too many files to check them all'), x:L('GitHubが一度に返せる上限を超えています。奥のフォルダの一部は未確認です。','It exceeds what GitHub returns at once. Some deeper folders were not checked.')});
+
+  // 7. Releases の配布ファイル
+  const assets=releases.flatMap(r=>(r.assets||[]).map(a=>a.name));
+  const badAssets=assets.filter(n=>/\.(scr|pif|lnk|hta|vbs|vbe|jse|wsf|cpl|com)$/i.test(n)||dblRe.test(n));
+  if(badAssets.length) danger.push({t:L('配布ファイルに危険な形式があります','Releases contain dangerous file types'), x:LT(listFiles(badAssets)+'。.scr（スクリーンセーバー）や二重拡張子は、実行ファイルを別物に見せかける手口です。','{0}. .scr (screensaver) files and double extensions are tricks for disguising executables.',[listFiles(badAssets)])});
+
+  // 8. インストールした瞬間に自動で動く処理
+  if(typeof pkgRaw==='string'){
+    try{
+      const sc=(JSON.parse(pkgRaw).scripts)||{};
+      ['preinstall','install','postinstall','prepare'].filter(k=>sc[k]).forEach(k=>{
+        const cmd=String(sc[k]);
+        // 「node -e」だけでは危険にしない（Electron の node -e 'process.exit(0)' で誤報）。
+        // 危険＝中身を隠している、またはネットから取った物をそのまま実行する。注意＝ネットから何か取ってくる。
+        const net=/(curl|wget|https?:\/\/|invoke-webrequest|\biwr\b|\birm\b)/i.test(cmd);
+        const hidden=/(base64|eval\s*\(|buffer\.from\([^)]*['"](base64|hex)['"]|powershell[^\n]*\s-e(nc|ncodedcommand)?\s|(\\x[0-9a-f]{2}){8,})/i.test(cmd);
+        const pipeExec=/\|\s*(sudo\s+)?((ba|z)?sh|node|python3?|iex)\b/i.test(cmd);
+        const code='<code>'+esc(cmd.slice(0,160))+'</code> ';
+        const t=LT('npm install した瞬間に自動で動く処理（'+k+'）があります','Something runs automatically during npm install ({0})',[k]);
+        if(hidden || (net && pipeExec)) danger.push({t, x:code+L('ネットから取ってきた物をそのまま実行するか、読めない形の命令を含んでいます。','It runs something downloaded from the internet, or contains an unreadable command.')});
+        else if(net) warn.push({t, x:code+L('インストール中にネットから何かを取ってきます。何を取りに行っているか確認してください。','It downloads something during installation. Check what it is fetching.')});
+        // 手元のスクリプトを動かすだけの処理は、大きなプロジェクトのビルドでよくある（React・VS Code・puppeteer で誤報）
+        else if(k==='prepare' || trusted) info.push({t, x:code+L('リポジトリの中のスクリプトを動かすだけの処理です（ビルドの準備など）。','It only runs a script inside the repository (for example, to prepare a build).')});
+        else warn.push({t, x:code+L('リポジトリの中のスクリプトを動かします。実績の少ないリポジトリでは、ここに悪意のある処理が仕込まれることがあるので、中身を確認してください。','It runs a script inside the repository. In repositories without a track record, malicious code is sometimes hidden here, so check what it does.')});
+      });
+    }catch(e){ info.push({t:L('package.json を読み取れませんでした','Could not read package.json'), x:esc(e.message)}); }
+  } else if(pkgRaw&&pkgRaw.__err) info.push({t:L('package.json を取得できませんでした','Could not get package.json'), x:esc(pkgRaw.__err)});
+  if(typeof setupRaw==='string'){
+    // exec/eval だけでは「危険」にしない（Demucs のように、版の番号の1行を読むために使うのはよくある書き方のため）。
+    // 中身を隠す処理（base64・marshal・zlib・16進の並び）と一緒のときだけ「危険」にする
+    const hasExec=/\b(exec|eval)\s*\(/.test(setupRaw);
+    const hides=/base64\.b64decode|marshal\.loads|zlib\.decompress|codecs\.decode|bytes\.fromhex|(\\x[0-9a-fA-F]{2}){20,}/.test(setupRaw);
+    if(hides && hasExec)
+      danger.push({t:L('setup.py（インストール時に動くファイル）に、読めない形のコードを実行する処理があります','setup.py (which runs during installation) executes hidden code'), x:L('base64 などで隠した中身を exec / eval で実行するのは、中身を隠して実行する手口です。pip install しないでください。','Running content hidden with base64 or similar through exec / eval is a way to conceal what runs. Do not pip install it.')});
+    else if(hides)
+      warn.push({t:L('setup.py（インストール時に動くファイル）に、読めない形に変換したデータがあります','setup.py (which runs during installation) contains encoded data'), x:L('base64 などの展開があります。何を展開しているか、setup.py を開いて確認してください。','It decodes base64 or similar. Open setup.py and check what it is decoding.')});
+    else if(hasExec && /exec\s*\(\s*(line|f\.read\(\)|open\()[^\n]*|__version__/.test(setupRaw))
+      info.push({t:L('setup.py が exec で版の番号などを読み込んでいます','setup.py uses exec to read the version number or similar'), x:L('自分のファイルから <code>__version__</code> などの1行を読むための、よくある書き方です。','This is a common way to read a line such as <code>__version__</code> from its own files.')});
+    else if(hasExec)
+      warn.push({t:L('setup.py（インストール時に動くファイル）が exec / eval を使っています','setup.py (which runs during installation) uses exec / eval'), x:L('何を実行しているか、setup.py を開いて確認してください。','Open setup.py and check what it is running.')});
+    if(/\b(urllib\.request|requests\.(get|post)|http\.client|socket\.socket)/.test(setupRaw))
+      warn.push({t:L('setup.py（インストール時に動くファイル）がネット通信をしています','setup.py (which runs during installation) connects to the internet'), x:L('インストール中に外部から何かを取得しています。何を取りに行っているか確認してください。','It downloads something during installation. Check what it is fetching.')});
+    if(/cmdclass\s*=|\bos\.system\s*\(|\bsubprocess\./.test(setupRaw))
+      info.push({t:L('setup.py がインストール処理を独自に書き換えています','setup.py customizes the installation process'), x:L('C言語部分のビルドなどでよく使われる正規の書き方です。','This is a normal technique, often used to build C extensions.')});
+  } else if(setupRaw&&setupRaw.__err) info.push({t:L('setup.py を取得できませんでした','Could not get setup.py'), x:esc(setupRaw.__err)});
+
+  // 9. 公表済みの脆弱性
+  if(Array.isArray(advisories)){
+    if(advisories.length){
+      const sevName=L({critical:'緊急',high:'高',medium:'中',low:'低'},{critical:'Critical',high:'High',medium:'Medium',low:'Low'});
+      const items=advisories.slice(0,5).map(a=>'<li>'+(sevName[a.severity]||L('不明','Unknown'))+L('：',': ')+esc(a.summary||a.ghsa_id)+LT('（'+new Date(a.published_at).toLocaleDateString('ja-JP')+'）',' ({0})',[new Date(a.published_at).toLocaleDateString(locale())])+'</li>').join('');
+      info.push({t:LT('公表済みの脆弱性が '+advisories.length+(advisories.length>=10?' 件以上':' 件')+'あります',advisories.length>=10?'{0} or more published vulnerabilities':'{1}',[advisories.length,plural(advisories.length,'published vulnerability','published vulnerabilities')]),
+        x:L('多くは修正済みです。<b>最新版を使っていれば問題ないことがほとんど</b>ですが、古い版を使い続けている場合は更新してください。','Most are already fixed. <b>If you use the latest version you are almost always fine</b>, but update if you are still on an old one.')+'<ul class="notes" style="margin-top:6px">'+items+'</ul>'});
+      good.push({t:L('セキュリティの問題を公表して対応する運用がされています','Security problems are disclosed and handled openly'), x:L('脆弱性を隠さずに公開しているのは、管理がきちんとしている証拠です。','Publishing vulnerabilities instead of hiding them is a sign of careful maintenance.')});
+    }
+  } else info.push({t:L('脆弱性情報を取得できませんでした','Could not get vulnerability information'), x:esc(advisories&&advisories.__err||'')});
+
+  // 11. 依存ライブラリ（OSV.dev）
+  if(deps && !deps.err){
+    // 間接的な部品でも、悪質なパッケージは危険信号にする（サプライチェーン攻撃はここに紛れ込ませることが多い）
+    const malList=mark=>deps.malicious.map(m=>'<code>'+esc(m.name)+'</code>'+(m.indirect?mark:'')).join(L('、',', '));
+    if(deps.malicious.length)
+      danger.push({t:L('依存ライブラリに「悪意のあるパッケージ」として登録されたものがあります','A dependency is listed as a known malicious package'), x:LT(malList('（間接）')+'。インストールした時点で情報を盗むなどの被害が出るおそれがあります。使わないでください。','{0}. Installing it could already cause harm, such as stealing your data. Do not use it.',[malList(L('（間接）',' (indirect)'))])});
+    // 開発用の部品（devDependencies・requirements-dev.txt など）は、ツールを使うだけの人の手元では動かない（Hono・bun で誤報）
+    // 間接的な部品（ロックファイルから足したもの）は、自分では直接直せないので「注意」ではなく「参考」にとどめる
+    const direct=deps.vulnerable.filter(v=>!v.indirect && !deps.malicious.includes(v));
+    const indirectSerious=deps.vulnerable.filter(v=>v.indirect && v.top>=3 && !v.dev && !deps.malicious.includes(v));
+    const serious=direct.filter(v=>v.top>=3 && !v.dev && !v.lockOnly);
+    const lockSerious=direct.filter(v=>v.top>=3 && !v.dev && v.lockOnly);
+    const devSerious=direct.filter(v=>v.top>=3 && v.dev);
+    const rest=direct.filter(v=>v.top>=1 && v.top<3);
+    const unknownSev=direct.filter(v=>v.top===0);
+    if(deps.placeholders && deps.placeholders.length)
+      info.push({t:L('npm 公式が安全な中身に差し替えた名前の部品を使っています','It depends on a package name that npm replaced with a harmless placeholder'), x:LT(hostList(deps.placeholders.map(v=>v.name+' '+v.ver))+'。昔ここに悪質なパッケージがあり、npm 公式が空の安全な中身に差し替えたものです。害はありませんが、使う意味もない部品です。','{0}. A malicious package once used this name, and npm replaced it with an empty, harmless placeholder. It is harmless, but it is also useless.',[hostList(deps.placeholders.map(v=>v.name+' '+v.ver))])});
+    const depList=arr=>arr.slice(0,5).map(v=>'<code>'+esc(v.name)+' '+esc(v.ver)+'</code>').join(L('、',', '));
+    if(lockSerious.length)
+      info.push({t:LT('ロックファイルに書かれた版に、重大な既知の脆弱性があります（'+lockSerious.length+'個）','Versions recorded in the lock file have serious known vulnerabilities ({0})',[lockSerious.length]), x:LT(depList(lockSerious)+'。作者は版を固定しておらず、uv.lock・poetry.lock に書かれた版です。<code>uv sync</code> や <code>poetry install</code> で入れるとこの版が入りますが、<code>pip install</code> なら新しい版が入るので、影響しないことが多いです。','{0}. The author did not pin these; the versions come from uv.lock / poetry.lock. <code>uv sync</code> or <code>poetry install</code> installs these versions, but <code>pip install</code> gets newer ones, so it often does not affect you.',[depList(lockSerious)])});
+    if(indirectSerious.length)
+      info.push({t:LT('間接的に使われる部品に、重大な既知の脆弱性があります（'+indirectSerious.length+'個）','Indirect dependencies have serious known vulnerabilities ({0})',[indirectSerious.length]), x:LT(depList(indirectSerious)+'。直接ではなく、使っている部品がさらに使っている部品です。多くは、直接使っている部品の版を上げると一緒に直ります。','{0}. These are not used directly but by other dependencies. Most are fixed by upgrading the direct dependencies.',[depList(indirectSerious)])});
+    if(devSerious.length)
+      info.push({t:LT('開発用の部品に、重大な既知の脆弱性があります（'+devSerious.length+'個）','Development-only packages have serious known vulnerabilities ({0})',[devSerious.length]), x:LT(depList(devSerious)+'。プロジェクトを開発する人だけが使う部品で、ツールを使うだけなら影響しません。','{0}. These are only used by people developing the project; they do not affect you if you just use the tool.',[depList(devSerious)])});
+    if(serious.length)
+      warn.push({t:LT('依存ライブラリに、重大な既知の脆弱性があります（'+serious.length+'個）','Dependencies have serious known vulnerabilities ({0})',[serious.length]), x:LT(depList(serious)+'。<b>ウイルスとは別の話</b>で、古い版を使っていることによる弱点です。自分のパソコンで試す程度なら大きな問題になりにくいですが、Webサービスとして公開する場合は版を上げてください（下の表を参照）。','{0}. <b>This is not malware</b>: it is a weakness from using old versions. Trying it on your own computer is unlikely to be a big problem, but upgrade these if you run it as a public web service (see the table below).',[depList(serious)])});
+    if(unknownSev.length)
+      info.push({t:LT('重さを確かめられなかった既知の脆弱性があります（'+unknownSev.length+'個）','Some dependencies have known vulnerabilities of unconfirmed severity ({0})',[unknownSev.length]), x:LT(depList(unknownSev)+'。脆弱性の情報に重さが書かれていませんでした。軽いとは限らないので、下の表で内容を確かめてください。','{0}. The vulnerability records do not state a severity. That does not mean they are minor, so check the table below.',[depList(unknownSev)])});
+    if(rest.length)
+      info.push({t:LT('依存ライブラリに、軽めの既知の脆弱性があります（'+rest.length+'個）','Dependencies have minor known vulnerabilities ({0})',[rest.length]), x:L('詳しくは下の「依存ライブラリの既知の脆弱性」の表を見てください。','See the “Known vulnerabilities in dependencies” table below for details.')});
+  }
+
+  // 10. セキュリティの報告窓口
+  if(allPaths.some(f=>/^(\.github\/|docs\/)?security\.md$/i.test(f.path)))
+    good.push({t:L('セキュリティの報告窓口（SECURITY.md）があります','It has a security reporting policy (SECURITY.md)'), x:L('問題を見つけた人が作者に安全に知らせる手順が用意されています。','There is a defined way for people who find problems to report them to the author safely.')});
+
+  return {danger, warn, good, info, scorecard, deps};
+}
+
+function renderSafety(sec){
+  const nD=sec.danger.length, nW=sec.warn.length;
+  let v;
+  if(nD) v='<div class="verdict v-ng">'+LT('⛔ 危険信号が '+nD+' 件あります。ダウンロードや実行はしないでください','⛔ {0} found. Do not download or run it',[plural(nD,'danger sign','danger signs')])+'</div>';
+  else if(nW) v='<div class="verdict v-warn">'+LT('⚠ 注意点が '+nW+' 件あります。内容を確認してから使ってください','⚠ {0} found. Read them before using it',[plural(nW,'caution','cautions')])+'</div>';
+  else v='<div class="verdict v-ok">'+L('✅ 目立った危険信号は見つかりませんでした','✅ No obvious danger signs found')+'</div>';
+  const block=(arr,cls,title)=> arr.length ? '<p class="sigh">'+title+'</p>'+arr.map(s=>'<div class="sig '+cls+'"><b>'+s.t+'</b><div>'+s.x+'</div></div>').join('') : '';
+
+  let sc='';
+  const S=sec.platform==='hf' ? {__skip:true} : sec.scorecard;
+  const scName=L('第三者の採点（OpenSSF Scorecard）','Independent score (OpenSSF Scorecard)');
+  if(S && !S.__err && !S.__none && typeof S.score==='number'){
+    const names=L({'Binary-Artifacts':'リポジトリ内の実行ファイル','Dangerous-Workflow':'自動処理（GitHub Actions）の危険な設定','Maintained':'継続的なメンテナンス','Code-Review':'他の人によるコードの確認','Security-Policy':'セキュリティの報告窓口','Signed-Releases':'配布物の電子署名','Token-Permissions':'自動処理に与えた権限の絞り込み','Vulnerabilities':'未修正の既知の脆弱性'},
+                  {'Binary-Artifacts':'Executables in the repository','Dangerous-Workflow':'Dangerous automation (GitHub Actions) settings','Maintained':'Ongoing maintenance','Code-Review':'Code reviewed by others','Security-Policy':'Security reporting policy','Signed-Releases':'Signed releases','Token-Permissions':'Least-privilege automation tokens','Vulnerabilities':'Unfixed known vulnerabilities'});
+    const rows=(S.checks||[]).filter(c=>names[c.name]).map(c=>'<tr><td>'+names[c.name]+'</td><td>'+(c.score<0?L('対象外','N/A'):c.score+' / 10')+'</td></tr>').join('');
+    sc='<p class="sigh">'+scName+L('：',': ')+'<b style="color:var(--text)">'+S.score+' / 10</b>'+LT('（'+esc(S.date||'')+' 時点）',' (as of {0})',[esc(S.date||'')])+'</p>'
+      +'<p style="font-size:12.5px;color:var(--muted);margin:0 0 6px">'+L('これは「開発の体制がどれだけ整っているか」の点数で、<b>ウイルスの有無ではありません</b>。個人が作った良いツールでも低く出ます。','This scores how well the development process is organized. <b>It does not tell you whether there is malware.</b> Good tools made by individuals often score low.')+'</p>'
+      +'<table class="lic">'+rows+'</table>';
+  } else if(S && S.__none){
+    sc='<p class="sigh">'+scName+L('：未採点',': not scored')+'</p><p style="font-size:12.5px;color:var(--muted);margin:0">'+L('採点の対象になっていません。小さなプロジェクトでは普通のことで、危険という意味ではありません。','This repository has not been scored. That is normal for smaller projects and does not mean it is dangerous.')+'</p>';
+  } else if(S && S.__skip){
+    sc='';
+  } else {
+    sc='<p class="sigh">'+scName+L('：取得できませんでした',': could not be retrieved')+'</p><p style="font-size:12.5px;color:var(--muted);margin:0">'+esc(S&&S.__err||'')+'</p>';
+  }
+
+  return '<div class="box"><h2>'+L('🛡 安全性チェック','🛡 Safety check')+'</h2>'+v
+    +'<p style="font-size:12.5px;color:var(--muted);margin:-4px 0 12px">'+L('公開されている情報から、危険の兆候を探す簡易チェックです。<b>「危険信号が無い＝安全」という保証ではありません。</b>','This is a quick check for warning signs in public information. <b>“No danger signs” does not guarantee that it is safe.</b>')+'</p>'
+    +block(sec.danger,'d',L('危険信号','Danger signs'))
+    +block(sec.warn,'w',L('注意点','Cautions'))
+    +block(sec.good,'g',L('安心材料','Reassuring signs'))
+    +block(sec.info,'i',L('参考情報','For reference'))
+    +renderDeps(sec.deps)
+    +sc
+    +'<p class="sigh">'+L('それでも必ず守ること','Rules to follow regardless')+'</p><ul class="notes">'
+    +(sec.platform==='hf' ? LT('<li>モデルは <b>safetensors や gguf の形式</b>を選ぶ（pickle の .bin・.pt・.ckpt は、信用できる作者のものだけ）</li>'
+      +'<li><code>trust_remote_code=True</code> は、作者を信用できるときだけ付ける</li>'
+      +'<li>Space（デモ画面）に、<b>パスワード・API キー・個人情報を入れない</b>（作者のサーバーに送られる）</li>'
+      +'<li>「このファイルを落として実行して」と案内されても、実行ファイルは落とさない</li>'
+      +'<li>初めて試すモデルは、Google Colab など<b>自分のパソコン以外</b>で動かす</li>',
+       '<li>Choose models in <b>safetensors or gguf format</b> (load pickle .bin / .pt / .ckpt files only from authors you trust)</li><li>Use <code>trust_remote_code=True</code> only when you trust the author</li><li><b>Never enter passwords, API keys, or personal information</b> into a Space (it is sent to the author’s server)</li><li>Do not download executables, even if told to “download and run this file”</li><li>Try new models <b>somewhere other than your own computer</b> first, such as Google Colab</li>',[]) : '')
+    +(sec.platform==='hf' ? '' : LT('<li>実行ファイルは<b>そのリポジトリの Releases からだけ</b>落とす（検索広告・動画の概要欄・READMEの外部リンクから落とさない）</li>'
+      +'<li><b>パスワード付きの圧縮ファイルは開かない</b></li>'
+      +'<li>「管理者として実行」や <code>sudo</code> は、理由が分からなければ使わない</li>'
+      +'<li>初めて試すものは、Google Colab など<b>自分のパソコン以外</b>で動かす</li>'
+      +'<li>APIキーやパスワードを入力する前に、それが何に使われるか確かめる</li>',
+       '<li>Download executables <b>only from that repository’s Releases</b> (not from search ads, video descriptions, or external links in the README)</li><li><b>Never open password-protected archives</b></li><li>Do not use “Run as administrator” or <code>sudo</code> unless you understand why it is needed</li><li>Try new tools <b>somewhere other than your own computer</b> first, such as Google Colab</li><li>Before entering an API key or password, find out what it will be used for</li>',[]))
+    +'</ul></div>';
+}
+
+/* ---------- 依存ライブラリの既知の脆弱性（OSV.dev） ---------- */
+// OSV.dev = Googleが運営するオープンソースの脆弱性データベース。版が固定されているものだけ照合できる
+// 詳細（重さ・概要・修正版）を取りに行く上限。以前は全体で40件だけで、最初の数個の部品が使い切ると
+// 残りの部品は1件も中身を見ないまま「軽め」扱いになっていた（Fooocus の gradio 77件など）。
+// 部品ごとに上限を設けて、全部の部品の重さが分かるようにする
+const OSV_DETAIL_PER_PKG=10, OSV_DETAIL_MAX=300, OSV_PARALLEL=12;
+function pyName(n){ return n.toLowerCase().replace(/[-_.]+/g,'-'); }
+function verCmp(a,b){
+  const pa=String(a).split(/[.\-+]/), pb=String(b).split(/[.\-+]/);
+  for(let i=0;i<Math.max(pa.length,pb.length);i++){
+    const x=pa[i]||'0', y=pb[i]||'0', nx=parseInt(x,10), ny=parseInt(y,10);
+    if(!isNaN(nx)&&!isNaN(ny)&&nx!==ny) return nx-ny;
+    if(isNaN(nx)||isNaN(ny)){ if(x!==y) return x<y?-1:1; }
+  }
+  return 0;
+}
+
+// requirements.txt / pyproject.toml / package.json(+lock) から「名前と版」を取り出す
+// errors には言語に関係ない形（ファイル名と理由の種類）で入れ、表示するときに訳す
+function parseDeps({reqRaws, pyprojRaw, pkgRaw, lockRaw, poetryLockRaw, uvLockRaw, pnpmLockRaw, yarnLockRaw, bunLockRaw, bunLockb}){
+  const pinned=[], loose=[], errors=[];
+  // pnpm・yarn・bun のロックファイル（package-lock.json の代わりに使われるもの）
+  const alt=parseAltLocks({pnpmLockRaw, yarnLockRaw, bunLockRaw});
+  alt.errors.forEach(e=>errors.push(e));
+  if(bunLockb) errors.push({file:'bun.lockb', why:'binary'});
+  const seen=new Set();
+  const add=(eco,name,ver,src,dev)=>{ const k=eco+':'+name; if(seen.has(k)) return; seen.add(k); pinned.push({eco,name,ver,src,dev:!!dev}); };
+  const addLoose=(eco,name,src,dev)=>{ const k=eco+':'+name; if(seen.has(k)) return; seen.add(k); loose.push({eco,name,src,dev:!!dev}); };
+  const pyLine=(line,src)=>{
+    line=line.replace(/\s+#.*$/,'').trim();
+    if(!line || line.startsWith('#') || line.startsWith('-') || /^(git\+|https?:|file:|\.)/.test(line)) return;
+    const m=line.match(/^([A-Za-z0-9][A-Za-z0-9._-]*)(\[[^\]]*\])?\s*(===|==)\s*([^\s;,#]+)/);
+    // 「==1.2.*」は版が1つに決まっていない（OSV に渡しても照合されない）ので、決まっていない側に入れる
+    if(m && !m[4].includes('*')) add('PyPI', pyName(m[1]), m[4].replace(/\+.*$/,''), src.replace(/ \(dev\)$/,''), / \(dev\)$/.test(src) || /(^|[-_.])(dev|develop|test|tests|testing|lint|docs?)([-_.]|$)/i.test(src));
+    else { const n=line.match(/^([A-Za-z0-9][A-Za-z0-9._-]*)/); if(n) addLoose('PyPI', pyName(n[1]), src); }
+  };
+  (reqRaws||[]).forEach(f=>{
+    // 「-e .」（自分自身を開発用に入れる行）があるファイルは、開発用の環境を作るためのもの。
+    // 利用者は pip install <名前> で入れるので、ここに固定された版は入らない（httpx の cryptography で誤報）
+    const devEnv = typeof f.text==='string' && /^\s*(-e|--editable)\s+\.(\[[^\]]*\])?\s*$/m.test(f.text);
+    if(typeof f.text==='string') f.text.split('\n').forEach(l=>pyLine(l, devEnv ? f.name+' (dev)' : f.name));
+    else errors.push({file:f.name, why:(f.text&&f.text.__err)||'fetch'});
+  });
+  if(typeof pyprojRaw==='string'){
+    // PEP 621 の dependencies = [ "x==1.0", ... ]（optional-dependencies は除く）
+    // 「uvicorn[standard]==0.30」のように引用符の中に ] があっても一覧が途中で切れないよう、引用符の外の ] で終わりを決める
+    const head=pyprojRaw.match(/^\s*dependencies\s*=\s*\[/m);
+    if(head){
+      let i=head.index+head[0].length, q=null, body='';
+      for(; i<pyprojRaw.length; i++){
+        const c=pyprojRaw[i];
+        if(q){ if(c===q) q=null; }
+        else if(c==='"'||c==="'") q=c;
+        else if(c===']') break;
+        body+=c;
+      }
+      [...body.matchAll(/["']([^"']+)["']/g)].forEach(x=>pyLine(x[1],'pyproject.toml'));
+    }
+    // Poetry の [tool.poetry.dependencies]
+    const sec=pyprojRaw.match(/\[tool\.poetry\.dependencies\]([\s\S]*?)(\n\[|$)/);
+    if(sec) sec[1].split('\n').forEach(l=>{
+      const q=l.match(/^\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*=\s*["']([^"']+)["']/);
+      if(!q || q[1].toLowerCase()==='python') return;
+      const v=q[2].trim();
+      if(/^=?=?\s*\d[\w.]*$/.test(v)) add('PyPI', pyName(q[1]), v.replace(/^=+\s*/,''), 'pyproject.toml');
+      else addLoose('PyPI', pyName(q[1]), 'pyproject.toml');
+    });
+  } else if(pyprojRaw&&pyprojRaw.__err) errors.push({file:'pyproject.toml', why:pyprojRaw.__err});
+
+  if(typeof pkgRaw==='string'){
+    let pj=null, lock=null;
+    try{ pj=JSON.parse(pkgRaw); }catch(e){ errors.push({file:'package.json', why:'parse'}); }
+    if(typeof lockRaw==='string'){ try{ lock=JSON.parse(lockRaw); }catch(e){ errors.push({file:'package-lock.json', why:'parse'}); } }
+    else if(lockRaw&&lockRaw.__err) errors.push({file:'package-lock.json', why:lockRaw.__err});
+    if(pj){
+      const all=Object.assign({}, pj.dependencies||{}, pj.devDependencies||{});
+      Object.keys(all).forEach(alias=>{
+        const spec0=String(all[alias]);
+        // npm から取らない指定（手元のフォルダ・リポジトリ内の部品・git など）は照合しない。
+        // npm に同じ名前の悪質パッケージが登録されていることがあり、誤って当たる（React の eslint-plugin-react-internal で誤報）
+        if(/^(link:|file:|workspace:|portal:|git\+|git:|github:|https?:|\.{0,2}\/)/.test(spec0)) return;
+        // 別名（"名前": "npm:本当の名前@範囲"）は、本当の名前で照合する（React の eslint-plugin-react-hooks-published で誤報）
+        const am=spec0.match(/^npm:((?:@[^@\/]+\/)?[^@]+)@(.+)$/);
+        const name = am ? am[1] : alias;
+        const spec = am ? am[2] : spec0;
+        // ロックファイルがあれば、実際に入る版がそこに書いてある
+        // ロックファイルには「入れた時の名前（別名）」で書いてある
+        const lv = lock && ((lock.packages&&lock.packages['node_modules/'+alias]&&lock.packages['node_modules/'+alias].version) || (lock.dependencies&&lock.dependencies[alias]&&lock.dependencies[alias].version));
+        // Python のプロジェクト（pyproject.toml がある）で package.json が private なら、画面部分を組み立てる道具。
+        // 利用者は pip install で組み立て済みのものを入れるので、ここの部品は手元で動かない（gradio の handlebars で誤報）
+        const buildOnly = pj.private===true && typeof pyprojRaw==='string';
+        const dev = buildOnly || !(pj.dependencies && alias in pj.dependencies);
+        const av = !lv && alt.directVersion(alias, spec0, name, spec);
+        if(lv) add('npm', name, lv, 'package-lock.json', dev);
+        else if(av) add('npm', av.name, av.ver, alt.src, dev);
+        else if(/^\d+\.\d+\.\d+([\-+][\w.]+)?$/.test(spec)) add('npm', name, spec, 'package.json', dev);
+        else addLoose('npm', name, 'package.json', dev);
+      });
+    }
+  }
+  addFromLocks({pinned, loose, errors, lockRaw, poetryLockRaw, uvLockRaw, alt});
+  return {pinned, loose, errors};
+}
+
+// ---- pnpm・yarn・bun のロックファイルの読み取り ----
+// 返すもの：all＝全部品 {name, ver, dev, src}、directVersion(name, 範囲)＝直接の部品の実際の版、src＝ファイル名
+// 3つあったら、全部品はすべて足し、直接の部品の版は pnpm → yarn → bun の順に探す
+function parseAltLocks({pnpmLockRaw, yarnLockRaw, bunLockRaw}){
+  const all=[], errors=[], finders=[];
+  let src='';
+  const okVer=v=>/^\d/.test(v||'');   // workspace: ・ link: ・ github: ・ file: などは照合しない
+  // pnpm-lock.yaml：書類（---）が複数あることがある。版 5（/名前/版）・6（/名前@版）・9（名前@版）に対応
+  if(typeof pnpmLockRaw==='string'){
+    const direct=new Map();
+    pnpmLockRaw.split(/^---\s*$/m).forEach(doc=>{
+      const lv=parseFloat((doc.match(/^lockfileVersion:\s*['"]?([\d.]+)/m)||[])[1]||'9');
+      let section=null, importer=null, kind=null, cur=null;
+      doc.split('\n').forEach(line=>{
+        if(/^\S/.test(line)){ section=line.replace(/:.*$/,'').trim(); importer=null; kind=null; cur=null; return; }
+        let m;
+        if(section==='importers'){
+          // 下げ幅をきっちり見る（以前は「    dependencies:」も2文字下げの行として当たり、直接の部品の版を1つも取れていなかった）
+          if((m=line.match(/^  (['"]?)([^\s'"].*?)\1:\s*$/))){ importer=m[2]; kind=null; return; }
+          if((m=line.match(/^    (dependencies|devDependencies|optionalDependencies):\s*$/))){ kind=m[1]; return; }
+          if((m=line.match(/^      (['"]?)([^\s'"].*?)\1:\s*$/))){ cur=m[2]; return; }
+          if((m=line.match(/^        version:\s*['"]?([^\s'"]+)/)) && importer==='.' && cur && kind) direct.set(cur,{ver:m[1],dev:kind==='devDependencies'});
+        } else if(lv<6 && (section==='dependencies'||section==='devDependencies'||section==='optionalDependencies')){
+          if((m=line.match(/^  (['"]?)([^\s'"].*?)\1:\s*['"]?([^\s'"(_]+)/))) direct.set(m[2],{ver:m[3],dev:section==='devDependencies'});
+        } else if(section==='packages'){
+          if((m=line.match(/^  (['"]?)([^\s'"].*?)\1:\s*$/))){
+            let key=m[2].replace(/^\//,'').replace(/\(.*$/,''), name, ver;
+            if(lv<6){ key=key.replace(/_[^\/]*$/,''); const p=key.split('/'); ver=p.pop(); name=p.join('/'); }
+            else { const at=key.lastIndexOf('@'); if(at>0){ name=key.slice(0,at); ver=key.slice(at+1); } }
+            if(name && okVer(ver)) all.push({name, ver, dev:false, src:'pnpm-lock.yaml'});
+            return;
+          }
+          if(/^    dev:\s*true/.test(line) && all.length && all[all.length-1].src==='pnpm-lock.yaml') all[all.length-1].dev=true;
+        }
+      });
+    });
+    finders.push({src:'pnpm-lock.yaml', find:name=>{
+      const d=direct.get(name); if(!d) return '';
+      const v=d.ver.replace(/\(.*$/,'');
+      if(okVer(v)) return v;
+      const am=v.match(/^(?:npm:)?((?:@[^@\/]+\/)?[^@]+)@(\d.*)$/);   // 別名：本当の名前@版
+      return am ? {name:am[1], ver:am[2]} : '';
+    }});
+  }
+  // yarn.lock：旧形式（v1）と新形式（v2以降・__metadata がある）
+  if(typeof yarnLockRaw==='string'){
+    const berry=/^__metadata:/m.test(yarnLockRaw);
+    const specs=new Map();
+    yarnLockRaw.split(/\n(?=\S)/).forEach(block=>{
+      const head=block.split('\n')[0];
+      if(!head.endsWith(':') || head.startsWith('#') || head.startsWith('__metadata')) return;
+      const ver=(block.match(/^\s+version:?\s+"?([^"\s]+)"?/m)||[])[1];
+      if(!okVer(ver)) return;
+      // 新形式は npm から取ったものだけ（自分自身の workspace・link・改造版の patch は除く）
+      if(berry && !/^\s+resolution:\s+"?[^"\n]*@npm:/m.test(block)) return;
+      // 旧形式：リポジトリ内の部品（link: など）は npm から取らないので照合しない
+      if(!berry && /@(link|file|workspace|portal):/.test(head)) return;
+      let name=null;
+      head.slice(0,-1).replace(/"/g,'').split(/,\s*/).forEach(h=>{
+        h=h.trim(); const at=h.lastIndexOf('@'); if(at<=0) return;
+        name=h.slice(0,at); specs.set(name+'@'+h.slice(at+1).replace(/^npm:/,''), ver); specs.set(h, ver);
+      });
+      // 別名で入れた部品（"別名@npm:本当の名前@版"）は、本当の名前で照合する。
+      // 新形式は resolution 行に本当の名前があるのでそれを使う（babel の @babel-baseline/cli で取り違えた）
+      const res=berry && (block.match(/^\s+resolution:\s+"?(.+)@npm:[^"\n]+"?/m)||[])[1];
+      const real = res || (name && name.includes('@npm:') ? name.slice(name.indexOf('@npm:')+5) : name);
+      if(real) all.push({name:real, ver, dev:false, src:'yarn.lock'});
+    });
+    finders.push({src:'yarn.lock', find:(name,spec)=>specs.get(name+'@'+spec)||''});
+  }
+  // bun.lock：JSON とほぼ同じ（末尾に余分なカンマがある）
+  if(typeof bunLockRaw==='string'){
+    let j=null;
+    try{ j=JSON.parse(bunLockRaw.replace(/,(\s*[}\]])/g,'$1')); }catch(e){ errors.push({file:'bun.lock', why:'parse'}); }
+    if(j){
+      const top=new Map();
+      Object.entries(j.packages||{}).forEach(([key,arr])=>{
+        if(!Array.isArray(arr) || typeof arr[0]!=='string') return;
+        const id=arr[0], at=id.lastIndexOf('@'); if(at<=0) return;
+        const name=id.slice(0,at), ver=id.slice(at+1);
+        if(!okVer(ver)) return;
+        all.push({name, ver, dev:false, src:'bun.lock'});
+        if(key===name) top.set(name,ver);   // 一番上に置かれた版＝直接の部品が使う版
+      });
+      finders.push({src:'bun.lock', find:name=>top.get(name)||''});
+    }
+  } else if(bunLockRaw&&bunLockRaw.__err) errors.push({file:'bun.lock', why:bunLockRaw.__err});
+  if(pnpmLockRaw&&pnpmLockRaw.__err) errors.push({file:'pnpm-lock.yaml', why:pnpmLockRaw.__err});
+  if(yarnLockRaw&&yarnLockRaw.__err) errors.push({file:'yarn.lock', why:yarnLockRaw.__err});
+  return {
+    all, errors,
+    get src(){ return src||'lock'; },
+    // alias＝package.json に書かれた名前、spec0＝書かれた指定、name/spec＝別名を外した本当の名前と範囲
+    // 返すもの：{name, ver}（見つからなければ null）
+    directVersion(alias, spec0, name, spec){
+      name=name||alias; spec=spec||spec0;
+      for(const f of finders){
+        let v=f.find(alias, spec0) || (name!==alias ? f.find(name, spec) : '');
+        if(v){ src=f.src; return typeof v==='object' ? v : {name, ver:v}; }
+      }
+      return null;
+    }
+  };
+}
+
+// ロックファイルから、間接的に使われる部品（使っている部品がさらに使っている部品）を足す。
+// 直接の部品で版を決めていなかったもの（pydantic>=2 など）も、ロックファイルに実際の版があれば照合できるようにする
+const INDIRECT_MAX=2500;   // 間接的な部品の照合の上限（巨大なプロジェクトで時間がかかりすぎないように）
+function addFromLocks({pinned, loose, errors, lockRaw, poetryLockRaw, uvLockRaw, alt}){
+  const seenVer=new Set(pinned.map(d=>d.eco+':'+d.name+'@'+d.ver));
+  let n=0;
+  const addIndirect=(eco,name,ver,src,dev)=>{
+    if(!name||!ver) return;
+    const key=eco+':'+name;
+    // 版を決めていなかった直接の部品 → ロックファイルの版で照合する（直接の部品として扱う）
+    const li=loose.findIndex(d=>d.eco+':'+d.name===key);
+    // Python では、pip install -r requirements.txt や pip install . は uv.lock・poetry.lock を見ない（入れた時点の新しい版が入る）。
+    // ロックファイルからだけ版が分かった部品は lockOnly にして、注意ではなく参考にする（anthropic-sdk-python の anyio などで誤報）。
+    // npm は、リポジトリで npm install すると package-lock.json の版がそのまま入るので対象外
+    // package.json で開発用の欄に書かれていたら、補ったあとも開発用（angular の "angular-1.5": "npm:angular@1.5" で誤報）
+    if(li>=0){ const was=loose[li]; loose.splice(li,1); pinned.push({eco,name,ver,src,dev:!!(dev||was.dev),lockOnly:eco==='PyPI'}); seenVer.add(key+'@'+ver); return; }
+    if(seenVer.has(key+'@'+ver) || n>=INDIRECT_MAX) return;
+    seenVer.add(key+'@'+ver); n++;
+    pinned.push({eco,name,ver,src,dev:!!dev,indirect:true});
+  };
+  // npm：package-lock.json（v2/v3 は packages、v1 は入れ子の dependencies）
+  if(typeof lockRaw==='string'){
+    let lock=null; try{ lock=JSON.parse(lockRaw); }catch(e){ /* 読めないことは parseDeps 側で記録済み */ }
+    if(lock && lock.packages){
+      Object.entries(lock.packages).forEach(([k,v])=>{
+        if(!k.includes('node_modules/') || !v || v.link || !v.version) return;   // ルート・ワークスペース・リンクは除く
+        addIndirect('npm', v.name || k.split('node_modules/').pop(), v.version, 'package-lock.json', v.dev||v.devOptional);   // 別名なら v.name が本当の名前
+      });
+    } else if(lock && lock.dependencies){
+      const walk=deps=>Object.entries(deps||{}).forEach(([name,v])=>{ if(v&&v.version) addIndirect('npm',name,v.version,'package-lock.json',v.dev); if(v&&v.dependencies) walk(v.dependencies); });
+      walk(lock.dependencies);
+    }
+  }
+  // npm：pnpm・yarn・bun のロックファイル
+  if(alt) alt.all.forEach(d=>addIndirect('npm', d.name, d.ver, d.src, d.dev));
+  // Python：poetry.lock・uv.lock（どちらも [[package]] の並び）
+  const tomlPackages=(text,src)=>{
+    text.split(/^\[\[package\]\]\s*$/m).slice(1).forEach(block=>{
+      const top=block.split(/^\[(?!\[)/m)[0];   // [package.dependencies] などの下位の表より前だけを見る
+      const name=(top.match(/^name\s*=\s*"([^"]+)"/m)||[])[1];
+      const ver=(top.match(/^version\s*=\s*"([^"]+)"/m)||[])[1];
+      const source=(top.match(/^source\s*=\s*\{([^}]*)\}/m)||[])[1]||'';
+      if(/editable|virtual|directory|path\s*=|git\s*=/.test(source)) return;   // 自分自身や手元のフォルダは除く
+      const cat=(top.match(/^category\s*=\s*"([^"]+)"/m)||[])[1];
+      const groups=(top.match(/^groups\s*=\s*\[([^\]]*)\]/m)||[])[1];
+      const dev = cat==='dev' || (groups!==undefined && !/"main"/.test(groups));
+      addIndirect('PyPI', pyName(name||''), ver, src, dev);
+    });
+  };
+  if(typeof poetryLockRaw==='string') tomlPackages(poetryLockRaw,'poetry.lock');
+  else if(poetryLockRaw&&poetryLockRaw.__err) errors.push({file:'poetry.lock', why:poetryLockRaw.__err});
+  if(typeof uvLockRaw==='string') tomlPackages(uvLockRaw,'uv.lock');
+  else if(uvLockRaw&&uvLockRaw.__err) errors.push({file:'uv.lock', why:uvLockRaw.__err});
+}
+
+async function checkDeps(files){
+  const parsed=parseDeps(files);
+  const res={...parsed, vulnerable:[], malicious:[], totalVulns:0, err:null, detailCut:false};
+  if(!parsed.pinned.length) return res;
+  try{
+    // OSV.dev は1回に1,000個まで。直接の部品が先に並んでいるので、分けて順に送る
+    const hits=[];
+    for(let off=0; off<parsed.pinned.length; off+=1000){
+      const chunk=parsed.pinned.slice(off,off+1000);
+      const queries=chunk.map(d=>({package:{name:d.name, ecosystem:d.eco}, version:d.ver}));
+      const r=await fetch('https://api.osv.dev/v1/querybatch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({queries})});
+      if(!r.ok) throw new Error('OSV.dev HTTP '+r.status);
+      const j=await r.json();
+      (j.results||[]).forEach((x,i)=>{ if(x.vulns&&x.vulns.length) hits.push({dep:chunk[i], ids:x.vulns.map(v=>v.id)}); });
+    }
+    // 詳細（概要・重さ・修正版）を取得する。
+    // GHSA の番号には重さが書かれていて、PYSEC などには無いことが多い。同じ問題が両方で登録されている場合、
+    // 先に読んだ方だけ使うので、GHSA を先に並べる（以前は PYSEC を先に読んで重さを取りこぼしていた）
+    const sevRank={CRITICAL:4,HIGH:3,MODERATE:2,MEDIUM:2,LOW:1};
+    const order=id=>/^GHSA-/.test(id)?0:/^MAL-/.test(id)?1:2;
+    let budget=OSV_DETAIL_MAX;
+    const plans=hits.map(h=>{
+      const ids=[...h.ids].sort((a,b)=>order(a)-order(b));
+      // 間接的な部品は、悪質かどうか（MAL-）と重さの見当がつけば十分なので、詳細は少なめに取る
+      const perPkg = h.dep.indirect ? 3 : OSV_DETAIL_PER_PKG;
+      const want=ids.slice(0,Math.min(perPkg,Math.max(0,budget))); budget-=want.length;
+      if(want.length<ids.length) res.detailCut=true;
+      return {h, ids, want};
+    });
+    // 並行して取りに行く（多い部品でも時間がかかりすぎないように、同時に OSV_PARALLEL 件まで）
+    const jobs=plans.flatMap(pl=>pl.want.map(id=>({pl,id})));
+    const got={};
+    let next=0;
+    await Promise.all(Array.from({length:Math.min(OSV_PARALLEL,jobs.length)},async()=>{
+      while(next<jobs.length){
+        const j=jobs[next++];
+        got[j.id]=await fetch('https://api.osv.dev/v1/vulns/'+encodeURIComponent(j.id)).then(x=>x.ok?x.json():null).catch(()=>null);
+      }
+    }));
+    for(const {h,ids,want} of plans){
+      // 同じ問題が PYSEC と GHSA の両方で登録されていることがあるので、別名で重複を除く
+      const counted=new Set(), items=[];
+      want.forEach(id=>{
+        const d=got[id];
+        if(counted.has(id)) return;
+        counted.add(id); if(d&&d.aliases) d.aliases.forEach(a=>counted.add(a));
+        const sev=d&&d.database_specific&&String(d.database_specific.severity||'').toUpperCase();
+        const fixed=[];
+        if(d&&d.affected) d.affected.forEach(a=>{
+          if(a.package && a.package.name && (h.dep.eco==='PyPI'?pyName(a.package.name):a.package.name)!==h.dep.name) return;
+          (a.ranges||[]).forEach(rg=>(rg.events||[]).forEach(ev=>{ if(ev.fixed) fixed.push(ev.fixed); }));
+        });
+        // この脆弱性が直る「今の版から一番近い」修正版（7系を使っているなら 7系の修正版。8系の修正版を出さない）
+        const nearest=fixed.filter(v=>verCmp(v,h.dep.ver)>0).sort(verCmp)[0]||'';
+        items.push({id, summary:(d&&(d.summary||(d.details||'').split('\n')[0]))||'', sev:sev||'', rank:sevRank[sev]||0, fixed, nearest});
+      });
+      const unseen=ids.slice(want.length).filter(id=>!counted.has(id)).length;
+      const count=items.length+unseen;
+      // 全部を直すのに必要な版の目安＝各脆弱性の「一番近い修正版」のうち最大のもの
+      const fixes=items.map(it=>it.nearest).filter(Boolean).sort(verCmp);
+      const top=Math.max(0,...items.map(i=>i.rank));
+      const entry={...h.dep, count, items:items.sort((a,b)=>b.rank-a.rank), top, fixTo:fixes.length?fixes[fixes.length-1]:'',
+        sevUnknown: top===0};   // 重さを1件も確かめられなかった（「軽め」とは区別する）
+      // 「0.0.1-security」は、npm 公式が悪質なパッケージを消して安全な空の中身に差し替えた版。
+      // OSV では「すべての版が悪質」と登録されているが、この版だけは無害（logseq の fs で誤報）
+      entry.npmPlaceholder = h.dep.eco==='npm' && /^0\.0\.\d+-security$/.test(h.dep.ver);
+      if(h.ids.some(id=>/^MAL-/.test(id)) && !entry.npmPlaceholder) res.malicious.push(entry);
+      else if(entry.npmPlaceholder){ res.placeholders=(res.placeholders||[]); res.placeholders.push(entry); continue; }
+      res.vulnerable.push(entry); res.totalVulns+=count;
+    }
+    res.vulnerable.sort((a,b)=>(a.indirect?1:0)-(b.indirect?1:0)||b.top-a.top||b.count-a.count);
+  }catch(e){ res.err=e.message; }
+  return res;
+}
+
+function depErrorText(e){
+  const why = e.why==='parse' ? L('読み取れません','could not be parsed') : e.why==='fetch' ? L('取得失敗','could not be fetched')
+    : e.why==='binary' ? L('古い形式（機械向けの bun.lockb）のため読めません','old binary format (bun.lockb), cannot be read') : e.why;
+  return esc(e.file)+LT('（'+why+'）',' ({0})',[why]);
+}
+
+function renderDeps(D){
+  if(!D) return '';
+  const sevName=L(['不明','低','中','高','緊急'],['Unknown','Low','Medium','High','Critical']);
+  let h='<p class="sigh">'+L('📦 依存ライブラリの既知の脆弱性（OSV.dev で照合）','📦 Known vulnerabilities in dependencies (checked with OSV.dev)')+'</p>';
+  const nPy=D.pinned.filter(d=>d.eco==='PyPI').length, nNpm=D.pinned.filter(d=>d.eco==='npm').length;
+  // 読めなかったファイル（古い bun.lockb など）は、脆弱性の有無に関係なく必ず知らせる
+  const errNote = D.errors.length ? '<p style="font-size:12px;color:var(--muted);margin:4px 0 0">'+L('※ 読めなかったファイル：','* Files that could not be read: ')+D.errors.map(depErrorText).join(L('、',', '))+'</p>' : '';
+  if(!D.pinned.length && !D.loose.length){
+    return h+'<p style="font-size:12.5px;color:var(--muted);margin:0">'+L('依存ライブラリの一覧（requirements.txt・pyproject.toml・package.json）がリポジトリ直下に見つかりませんでした。','No dependency list (requirements.txt, pyproject.toml, package.json) was found at the top of the repository.')+'</p>'+errNote;
+  }
+  const nInd=D.pinned.filter(d=>d.indirect).length;
+  h+='<p style="font-size:12.5px;color:var(--muted);margin:0 0 6px">'+(nInd
+    ? LT('版が決まっている <b>'+D.pinned.length+'個</b>（直接 '+(D.pinned.length-nInd)+'・ロックファイルから間接 '+nInd+'／Python '+nPy+'・npm '+nNpm+'）を照合しました。','Checked <b>{0}</b> packages with a fixed version ({1} direct, {2} indirect from lock files; Python {3}, npm {4}).',[D.pinned.length,(D.pinned.length-nInd),nInd,nPy,nNpm])
+    : LT('版が決まっている <b>'+D.pinned.length+'個</b>（Python '+nPy+'・npm '+nNpm+'）を照合しました。','Checked <b>{0}</b> {1} with a fixed version (Python {2}, npm {3}).',[D.pinned.length,(D.pinned.length===1?'package':'packages'),nPy,nNpm]));
+  if(D.loose.length) h+=LT(' 版を決めていない '+D.loose.length+'個は、インストールした時点の最新版が入るため照合していません。',' {0} without a fixed version {1} not checked, because the latest version is installed at install time.',[D.loose.length,(D.loose.length===1?'was':'were')]);
+  h+='</p>';
+  if(!D.pinned.length) return h+'<div class="sig i"><b>'+L('版が決まっているライブラリが無いため、照合していません','Nothing was checked because no package has a fixed version')+'</b><div>'+L('インストールした時点の最新版が入る指定なので、「古い版のまま」という種類の弱点は起きにくい作りです。','The latest versions are installed at install time, so “stuck on an old version” weaknesses are unlikely.')+'</div></div>'+errNote;
+  if(D.err) return h+'<div class="sig i"><b>'+L('照合できませんでした','The check could not be completed')+'</b><div>'+esc(D.err)+'</div></div>'+errNote;
+  if(!D.vulnerable.length) return h+'<div class="sig g"><b>'+L('照合した範囲では、既知の脆弱性は見つかりませんでした','No known vulnerabilities were found in what was checked')+'</b><div>'+(nInd?L('ロックファイルにある間接的な部品まで調べました。','Indirect dependencies listed in lock files were checked too.'):L('直接使っているライブラリだけを見ています。その先で使われているライブラリまでは調べていません。','Only direct dependencies were checked, not the libraries they depend on.'))+'</div></div>'+errNote;
+  h+='<table class="lic"><tr><th>'+L('ライブラリ','Package')+'</th><th>'+L('今の版','Version')+'</th><th>'+L('脆弱性','Vulnerabilities')+'</th><th>'+L('直る版','Fixed in')+'</th></tr>';
+  D.vulnerable.slice(0,15).forEach(v=>{
+    const ex=v.items.slice(0,2).map(i=>'<div style="font-size:12px;color:var(--muted)">・'+esc(i.summary.slice(0,90))+'</div>').join('');
+    h+='<tr><td><b>'+esc(v.name)+'</b><div style="font-size:11.5px;color:var(--muted)">'+(v.eco==='PyPI'?'Python':'npm')+' / '+esc(v.src)+(v.indirect?L('（間接）',' (indirect)'):'')+(v.lockOnly?L('（ロックファイルの版）',' (lock file version)'):'')+(v.dev?L('（開発用）',' (development only)'):'')+'</div>'+ex+'</td><td><code>'+esc(v.ver)+'</code></td><td>'+LT(v.count+'件（最大：'+sevName[v.top]+'）','{0} (highest: {1})',[v.count,sevName[v.top]])+'</td><td>'+(v.fixTo?'<code>'+esc(v.fixTo)+'</code>'+L(' 以上',' or later'):'—')+'</td></tr>';
+  });
+  h+='</table>';
+  if(D.vulnerable.length>15) h+='<p style="font-size:12px;color:var(--muted);margin:4px 0 0">'+LT('ほか '+(D.vulnerable.length-15)+'個','{0} more',[(D.vulnerable.length-15)])+'</p>';
+  if(D.detailCut) h+='<p style="font-size:12px;color:var(--muted);margin:4px 0 0">'+L('※ 件数が多いため、一部は概要を取得していません（件数には含めています）。','* Because there are many, summaries were not fetched for some (they are still counted).')+'</p>';
+  h+=errNote;
+  return h;
+}
+
+/* ---------- ライセンス判定 ---------- */
+// 戻り値：cls（色）・name（ライセンス名）・head（ひと言の結論）・note（説明）・marks（[商用利用, 改変, 再配布] = ok / cond / ng / unknown）・duties（使うときの条件）
+// Hugging Face はライセンスを小文字の短い名前で書くので、読みやすい名前に直す
+const LIC_NAMES={'MIT':'MIT License','APACHE-2.0':'Apache License 2.0','BSD-2-CLAUSE':'BSD 2-Clause License','BSD-3-CLAUSE':'BSD 3-Clause License',
+  'GPL-2.0':'GNU GPL v2.0','GPL-3.0':'GNU GPL v3.0','AGPL-3.0':'GNU AGPL v3.0','LGPL-2.1':'GNU LGPL v2.1','LGPL-3.0':'GNU LGPL v3.0','MPL-2.0':'Mozilla Public License 2.0',
+  'CC0-1.0':'CC0 1.0','CC-BY-4.0':'CC BY 4.0','CC-BY-SA-4.0':'CC BY-SA 4.0','CC-BY-NC-4.0':'CC BY-NC 4.0','CC-BY-NC-SA-4.0':'CC BY-NC-SA 4.0','CC-BY-ND-4.0':'CC BY-ND 4.0','CC-BY-NC-ND-4.0':'CC BY-NC-ND 4.0'};
+function licenseInfo(lic){
+  const id=(lic&&lic.spdx_id||'').toUpperCase();
+  let name=lic&&lic.name||'';
+  if(name.toUpperCase()===id && LIC_NAMES[id]) name=LIC_NAMES[id];
+  const make=(cls,head,marks,note,duties)=>({cls,name,head,marks,note,duties:duties||[]});
+  const ALL_OK=['ok','ok','ok'], COND=['cond','cond','cond'], UNKNOWN=['unknown','unknown','unknown'];
+  const keep=L('配るときは、著作権表示とライセンス文を同梱する','When you distribute it, include the copyright notice and license text');
+  const credit=L('作者名とライセンス名を表示し、変更したら変更したと書く','Credit the author, name the license, and say if you changed it');
+  if(!lic||id===''){
+    name=L('ライセンスが見つかりません','No license found');
+    return make('v-ng',L('商用利用は原則できません','Commercial use is generally not allowed'),['ng','ng','ng'],
+      L('ライセンスが書かれていない場合、権利はすべて作者に残ります。仕事で使いたい場合は Issues で作者に確認してください。','Without a license, all rights stay with the author. If you want to use it for work, ask the author through Issues.'),
+      [L('使う前に、作者の許可を取る','Get the author’s permission before using it')]);
+  }
+  // 「判別できない」は「無い」とは違う。GitHub はライセンスのファイルがあっても中身を見分けられないと NOASSERTION を返す
+  if(id==='NOASSERTION'||id==='OTHER'||id==='UNKNOWN'){
+    if(!name||/^(other|unknown|noassertion)$/i.test(name)) name=L('独自のライセンス（自動では判別できません）','Custom license (cannot be identified automatically)');
+    return make('v-warn',L('本文を読んで確認が必要です','You need to read the license text'),UNKNOWN,
+      L('決まった形のライセンスではないため、使ってよい範囲は本文に書かれています。','This is not a standard license, so what you may do is written in its text.'),
+      [L('ライセンスの本文を読む。分からなければ作者に確認する','Read the license text. If unsure, ask the author')]);
+  }
+  // 非商用（NC）は先に見る。「NCSA」のように NC の2文字を含むだけの名前と取り違えないよう、区切られた NC だけを見る
+  if(/(^|[-_ ])NC($|[-_ .])|NON-?COMMERCIAL/.test(id+' '+name.toUpperCase())){
+    const nd=/(^|-)ND($|-)/.test(id);
+    return make('v-ng',L('非商用限定。仕事では使えません','Non-commercial only. Not for work'),['ng',nd?'ng':'cond','cond'],
+      L('MIX受注など収益を伴う用途には使用できません。','It cannot be used for anything that earns money, such as paid client work.'),
+      [L('お金にならない用途だけで使う','Use it only for things that earn no money'),credit]);
+  }
+  if(/^(CC0|UNLICENSE|0BSD|WTFPL|MIT-0|PDDL)/.test(id)){
+    return make('v-ok',L('商用利用OK（条件ほぼなし）','Commercial use OK (almost no conditions)'),ALL_OK,
+      L('ほぼ自由に使えます。','You can use it almost freely.'),[]);
+  }
+  if(/^(MIT|BSD|ISC|APACHE-2|NCSA|ZLIB|BSL-1|ARTISTIC-2|AFL-3|MS-PL|POSTGRESQL)/.test(id)){
+    const d=[keep];
+    if(id.startsWith('APACHE')) d.push(L('ファイルを変更したら、変更したことを書く','If you change files, state that you changed them'));
+    return make('v-ok',L('商用利用OK','Commercial use OK'),ALL_OK,L('仕事でも使えます。','You can use it for work.'),d);
+  }
+  if(/^(MPL|LGPL|EPL)/.test(id)){
+    return make('v-warn',L('商用利用できます（条件あり）','Commercial use allowed (with conditions)'),['ok','cond','cond'],
+      L('そのライブラリ自体を改変した場合、その部分のソース公開が必要です。自作部分は公開しなくて構いません。','If you modify the library itself, you must publish those changes. Your own code does not have to be published.'),
+      [keep,L('改変した部分のソースを公開する','Publish the source of the parts you modified')]);
+  }
+  if(/^AGPL/.test(id)){
+    return make('v-ng',L('要注意（Webサービスでも公開義務）','Be careful (must publish source even for web services)'),COND,
+      L('組み込んだソフト全体のソース公開義務が生じます。サーバー上で動かして利用者に提供するだけでも対象です。商用製品への組み込みは避けてください。','You must publish the source of the whole program that includes it — even if you only run it on a server for users. Avoid building it into commercial products.'),
+      [keep,L('配るときもネット越しに使わせるときも、全体のソースを同じライセンスで公開する','Whether you distribute it or offer it over a network, publish the whole source under the same license')]);
+  }
+  if(/^(GPL|EUPL|OSL)/.test(id)){
+    return make('v-warn',L('条件が重い（要確認）','Strict conditions (check carefully)'),COND,
+      L('組み込んだ自作ソフト全体を同じ系統のライセンスで公開する義務が生じ得ます。「ツールとして自分が使うだけ」なら通常は問題ありません。','You may have to publish your whole program under the same kind of license if you include it. Simply using it as a tool yourself is normally fine.'),
+      [keep,L('配るときは、全体のソースを同じライセンスで公開する','When you distribute it, publish the whole source under the same license')]);
+  }
+  if(/^CC-BY-SA|^ODBL/.test(id)){
+    return make('v-warn',L('商用利用できます（条件あり）','Commercial use allowed (with conditions)'),['ok','cond','cond'],
+      L('改変したものを配るときは、同じライセンスにする必要があります。','If you share a modified version, it must use the same license.'),
+      [credit,L('改変したものは同じライセンスで配る','Share modified versions under the same license')]);
+  }
+  if(/^CC-BY-ND/.test(id)){
+    return make('v-warn',L('商用利用できます（改変したものは配れません）','Commercial use allowed (no sharing of modified versions)'),['ok','ng','cond'],
+      L('そのままの形なら配れますが、改変したものは配れません。','You may share it unchanged, but not modified versions.'),[credit]);
+  }
+  if(/^(CC-BY|ODC-BY)/.test(id)){
+    return make('v-ok',L('商用利用OK（作者名の表示が必要）','Commercial use OK (credit required)'),ALL_OK,
+      L('仕事でも使えます。','You can use it for work.'),[credit]);
+  }
+  if(/OPENRAIL/.test(id)){
+    return make('v-warn',L('商用利用できます（禁止された用途あり）','Commercial use allowed (some uses are banned)'),['cond','cond','cond'],
+      L('AI モデル向けのライセンスです。使ってはいけない用途が本文に列挙されています。','This license is made for AI models. Its text lists uses that are not allowed.'),
+      [L('禁止されている用途に使わない','Do not use it for banned purposes'),L('配るときは、同じ使用制限を引き継ぐ','When you share it, pass on the same use restrictions')]);
+  }
+  if(/^(LLAMA|GEMMA)/.test(id)){
+    return make('v-warn',L('独自の規約。条件を確認してください','Custom terms. Check the conditions'),COND,
+      L('モデルを作った会社の独自の規約です。商用利用の条件や禁止用途が決められています。','These are the model maker’s own terms. They set conditions for commercial use and list banned uses.'),
+      [L('規約の本文を読み、条件と禁止用途を守る','Read the terms and follow the conditions and banned uses')]);
+  }
+  return make('v-warn',L('個別に確認が必要です','Needs individual checking'),UNKNOWN,
+    L('一般的でないライセンスです。LICENSEファイル本文をご確認ください。','This is an uncommon license. Please read the LICENSE file.'),
+    [L('ライセンスの本文を読む。分からなければ作者に確認する','Read the license text. If unsure, ask the author')]);
+}
+// ライセンスの欄。link は本文を読めるページ（https のみ）
+function licenseBox(lic, link, linkIsText){
+  const MARK={ok:['◎',L('できる','Yes'),'m-ok'], cond:['△',L('条件つき','Conditions'),'m-warn'], ng:['×',L('できない','No'),'m-ng'], unknown:['？',L('要確認','To check'),'m-warn']};
+  const items=[L('商用利用','Commercial use'),L('改変','Modify'),L('再配布','Share')];
+  let h='<div class="box licbox"><h2>📜 '+L('ライセンス','License')+'</h2>'
+    +'<div class="lic-head '+lic.cls+'"><span class="lic-name">'+esc(lic.name)+'</span><span class="lic-say">'+esc(lic.head)+'</span></div>'
+    +'<div class="lic-marks">'+items.map((t,i)=>{ const m=MARK[lic.marks[i]]; return '<div class="lic-mark '+m[2]+'"><span>'+t+'</span><b>'+m[0]+'</b><em>'+m[1]+'</em></div>'; }).join('')+'</div>'
+    +'<p class="lic-note">'+lic.note+'</p>';
+  if(lic.duties.length) h+='<p class="lic-sub">'+L('使うときの条件','What you must do')+'</p><ul class="notes">'+lic.duties.map(d=>'<li>'+d+'</li>').join('')+'</ul>';
+  if(link && /^https:\/\//i.test(link)) h+='<p class="lic-link"><a href="'+esc(link)+'" target="_blank" rel="noopener">'+(linkIsText?L('ライセンスの本文を読む →','Read the license text →'):L('配布ページで確認する →','Check the project page →'))+'</a></p>';
+  h+='<p class="lic-foot">'+L('※ 目安です。学習済みモデルや一部のファイルは、別のライセンスのことがあります。','* This is a guide. Trained models and some files may have a different license.')+'</p></div>';
+  return h;
+}
+
+/* ---------- Hugging Face（モデル・データセット・Space） ----------
+   使う通信先は huggingface.co の公開 API だけ。トークンは使わない（ゲート付き・非公開のものは調べられない） */
+const HF_RESERVED=/^(docs|models|papers|blog|pricing|login|join|settings|organizations|collections|posts|learn|tasks|chat|enterprise|new|search|api|welcome|terms-of-service|privacy)$/i;
+// URL から種類（model / dataset / space）と ID を取り出す。Hugging Face の URL でなければ null
+function parseHF(s){
+  s=(s||'').trim();
+  const m=s.match(/^(?:https?:\/\/)?(?:www\.)?(?:huggingface\.co|hf\.co)\/(.*)$/i);
+  if(!m) return null;
+  let parts=m[1].split(/[?#]/)[0].split('/').filter(Boolean);
+  let kind='model';
+  if(/^datasets$/i.test(parts[0]||'')){ kind='dataset'; parts=parts.slice(1); }
+  else if(/^spaces$/i.test(parts[0]||'')){ kind='space'; parts=parts.slice(1); }
+  if(!parts.length || (kind==='model' && HF_RESERVED.test(parts[0]))) return {bad:true};
+  // 昔の名前（bert-base-uncased のような作者なしの ID）は、モデルとデータセットだけにある
+  const two = parts.length>=2 && !/^(tree|blob|resolve|raw|discussions|commits|files)$/i.test(parts[1]);
+  if(!two && kind==='space') return {bad:true};
+  const id = two ? parts[0]+'/'+parts[1] : parts[0];
+  if(!/^[\w.\-]+(\/[\w.\-]+)?$/.test(id)) return {bad:true};
+  return {kind, id};
+}
+const HF_PREFIX={model:'', dataset:'datasets/', space:'spaces/'};
+const HF_API={model:'models', dataset:'datasets', space:'spaces'};
+
+async function hfJSON(u){
+  const r=await fetch(u);
+  // 存在しない・非公開・ゲート付きのときは 401 か 404 が返る
+  if(r.status===401||r.status===404) throw new Error(L('Hugging Face で見つかりませんでした。URL が正しいか、非公開でないかご確認ください。','Not found on Hugging Face. Check that the URL is correct and the repository is not private.'));
+  if(r.status===429) throw new Error(L('Hugging Face の利用制限に達しました。しばらく待ってからお試しください。','You reached the Hugging Face rate limit. Please wait a while and try again.'));
+  if(!r.ok) throw new Error(LT('取得に失敗しました（HTTP '+r.status+'）','Request failed (HTTP {0})',[r.status]));
+  return r.json();
+}
+// Hugging Face の ID（24桁の16進数）は、先頭8桁が作られた時刻（秒）になっている
+function hfCreated(id){ return /^[0-9a-f]{24}$/i.test(id||'') ? new Date(parseInt(id.slice(0,8),16)*1000).toISOString() : null; }
+
+async function runHF(t){
+  busy=true; goEl.disabled=true;
+  setStatus(L('Hugging Face から情報を取得しています…','Fetching information from Hugging Face…'));
+  try{
+    const info=await hfJSON('https://huggingface.co/api/'+HF_API[t.kind]+'/'+t.id+'?securityStatus=true');
+    const id=info.id||t.id, author=info.author||id.split('/')[0];
+    setStatus(L('中身と安全性を調べています…','Checking contents and safety…'));
+    const raw=name=>fetch('https://huggingface.co/'+HF_PREFIX[t.kind]+id+'/raw/main/'+name).then(r=>r.ok?r.text():Promise.reject(new Error('HTTP '+r.status))).catch(e=>({__err:e.message}));
+    const files=(info.siblings||[]).map(s=>s.rfilename);
+    // 作者は組織か個人のどちらか。両方に問い合わせて、返事があった方を使う
+    const [org, user, readme] = await Promise.all([
+      hfJSON('https://huggingface.co/api/organizations/'+author+'/overview').catch(e=>({__err:e.message})),
+      hfJSON('https://huggingface.co/api/users/'+author+'/overview').catch(e=>({__err:e.message})),
+      files.includes('README.md') ? raw('README.md') : null
+    ]);
+    const o = !org.__err ? org : !user.__err ? user : null;
+    const owner = o ? {type: o===org?'org':'user', login:author, created:hfCreated(o._id), verified:!!o.isVerified,
+      followers:o.numFollowers||0, models:o.numModels||0} : {__err:(user.__err||org.__err)};
+    // Hugging Face の「unsafe」には、ウイルスの検出と、一般的な「pickle を含む」という指摘が混ざっている。
+    // 問題ありのファイルがあるときだけ、ファイルごとの詳しい検査結果（どの検査で何が出たか）を取って見分ける
+    const flagged=((info.securityRepoStatus||{}).filesWithIssues||[]).map(f=>f.path);
+    let fileSec=null;
+    if(flagged.length){
+      const dirs=[...new Set(flagged.map(f=>f.includes('/')?f.slice(0,f.lastIndexOf('/')):''))].slice(0,6);
+      fileSec={};
+      await Promise.all(dirs.map(d=>hfJSON('https://huggingface.co/api/'+HF_API[t.kind]+'/'+id+'/tree/main'+(d?'/'+d.split('/').map(encodeURIComponent).join('/'):'')+'?expand=true')
+        .then(list=>(list||[]).forEach(x=>{ if(x&&x.securityFileStatus) fileSec[x.path]=x.securityFileStatus; }))
+        .catch(()=>{})));
+    }
+    // Space を自分のパソコンに複製して動かすときのために、requirements.txt も照合する
+    let deps=null;
+    if(files.includes('requirements.txt')){
+      setStatus(L('依存ライブラリの脆弱性を調べています…','Checking dependencies for known vulnerabilities…'));
+      deps=await checkDeps({reqRaws:[{name:'requirements.txt', text:await raw('requirements.txt')}]});
+    }
+    last={kind:'hf', t:{kind:t.kind, id}, info, owner, files, fileSec, readme: typeof readme==='string'?readme:'', readmeErr: readme&&readme.__err||null, deps};
+    showResult(true);
+    setStatus('');
+  }catch(e){
+    setStatus('⚠ '+(e.message||e), true);
+  }finally{ busy=false; goEl.disabled=false; }
+}
+
+// 有名な組織（なりすましの見張り対象）。本物の別アカウントは HF_FAMOUS_OK に入れる
+const HF_FAMOUS=['openai','meta-llama','facebook','google','microsoft','mistralai','stabilityai','black-forest-labs','qwen','deepseek-ai','nvidia','huggingface','anthropic','apple','amazon','ibm-granite','tiiuae','bigscience','eleutherai','runwayml','compvis','tencent','bytedance','alibaba','xai-org','cohereforai','allenai','intel','sentence-transformers','coqui','suno','myshell-ai','fishaudio','lllyasviel','openbmb','thudm','baai','unsloth','bartowski','thebloke','pyannote','speechbrain'];
+const HF_FAMOUS_OK=['openai-community','google-bert','google-t5','facebookai','meta-llama','huggingfaceh4','huggingfacem4','huggingfacetb','huggingface-projects','microsoft-research','nvidia-ai','stabilityai-community','qwen-community','deepseek-community','intel-labs','mistral-community'];
+function hfNorm(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'').replace(/0/g,'o').replace(/[1i]/g,'l'); }
+function editDist(a,b){
+  const d=Array.from({length:a.length+1},(_,i)=>[i]);
+  for(let j=1;j<=b.length;j++) d[0][j]=j;
+  for(let i=1;i<=a.length;i++) for(let j=1;j<=b.length;j++) d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  return d[a.length][b.length];
+}
+// 似ている有名な組織の名前（本物なら null）
+function hfLookalike(author, verified, ownerDays){
+  const a=String(author||'').toLowerCase();
+  if(verified || HF_FAMOUS.includes(a) || HF_FAMOUS_OK.includes(a)) return null;
+  const na=hfNorm(a);
+  for(const f of HF_FAMOUS){
+    const nf=hfNorm(f);
+    if(nf.length<5) continue;
+    // 1文字ちがい・l と I のすり替え（例 meta-Ilama・0penai）
+    if(na===nf || editDist(na,nf)<=1) return f;
+    // 「本物の名前＋official など」：新しいアカウントだけ（古くからある派生名を巻き込まないため）
+    // 後ろに付く語も、名前と同じく i→l などの置き換えをしてから比べる
+    if(ownerDays<365 && ['official','team','ai','hf','org','inc','lab','labs','models','research'].some(w=>na===nf+hfNorm(w))) return f;
+  }
+  return null;
+}
+
+// pickle（読み込むとプログラムが動きうる形式）か。.bin は GGML（llama.cpp の古い形式）を除く
+function isPickle(f){
+  const n=f.toLowerCase();
+  if(/\.(pt|pth|ckpt|pkl|pickle|joblib|dill)$/.test(n)) return true;
+  return /\.bin$/.test(n) && !/ggml|gguf|[-_.]q[2-8](_|\.|k)|\bf16\b|tokenizer/.test(n);
+}
+function isSafeWeights(f){ return /\.(safetensors|gguf|onnx|tflite|mlmodel|msgpack)$/i.test(f) || /ggml.*\.bin$/i.test(f); }
+
+function hfCheck(x){
+  const {kind, info, owner, files, readme, deps, fileSec}=x;
+  const danger=[], warn=[], good=[], info2=[];
+  const likes=info.likes||0, downloads=info.downloads||0;
+  const rd=info.createdAt ? ageDays(info.createdAt) : 0;
+  const ownerDays = owner && !owner.__err && owner.created ? ageDays(owner.created) : 0;
+  const verified = !!(owner && owner.verified);
+  // 信頼度の目安（「注意」を「参考」に下げる場面だけで使う。危険信号は下げない）
+  const trusted = verified || (ownerDays>=730 && (likes>=100 || downloads>=10000));
+  const established = trusted && rd>=365 && likes>=200;
+
+  // 1. 作者
+  if(owner && !owner.__err){
+    const who=LT((owner.type==='org'?'組織アカウント':'個人アカウント')+'「'+esc(owner.login)+'」', '{0} “{1}”',[(owner.type==='org'?'Organization':'Personal account'),esc(owner.login)]);
+    const stats=LT('フォロワー '+num(owner.followers)+'人・公開モデル '+num(owner.models)+'件。',' {0} followers, {1} public models.',[num(owner.followers),num(owner.models)]);
+    if(verified) good.push({t:L('Hugging Face が確認した公式の組織です','This is an organization verified by Hugging Face'), x:LT(who+'。名前を名乗っている会社・団体の本物であることを、Hugging Face が確かめています。'+stats, '{0}. Hugging Face has confirmed it really belongs to the company or group it names.{1}',[who,stats])});
+    if(!owner.created) info2.push({t:L('作者のアカウントの作成日が分かりませんでした','Could not tell when the author’s account was created'), x:who+'.'});
+    else if(ownerDays<30) danger.push({t:LT('作者のアカウントが作られて '+ownerDays+' 日しか経っていません','The author’s account is only {0} old',[plural(ownerDays,'day','days')]), x:LT(who+'。人気モデルの偽物は、使い捨ての新しいアカウントで公開されることがよくあります。'+stats, '{0}. Fakes of popular models are often published from brand-new throwaway accounts.{1}',[who,stats])});
+    else if(ownerDays<180 && !verified) warn.push({t:LT('作者のアカウントがまだ新しめです（'+ageText(ownerDays)+'前に作成）','The author’s account is fairly new (created {0} ago)',[ageText(ownerDays)]), x:LT(who+'。新しいこと自体は問題ではありませんが、実績を確認してください。'+stats, '{0}. Being new is not a problem in itself, but check their track record.{1}',[who,stats])});
+    else if(!verified) good.push({t:LT('作者のアカウントは '+ageText(ownerDays)+'前から存在します','The author’s account has existed for {0}',[ageText(ownerDays)]), x:LT(who+'。'+stats, '{0}.{1}',[who,stats])});
+    const look=hfLookalike(owner.login, verified, ownerDays);
+    if(look) warn.push({t:LT('有名な組織「'+esc(look)+'」に名前が似ていますが、別のアカウントです','The name looks like the well-known “{0}” but it is a different account',[esc(look)]),
+      x:LT('本物は <a href="https://huggingface.co/'+esc(look)+'" target="_blank" rel="noopener">huggingface.co/'+esc(look)+'</a> です。似た名前で偽物を配る手口があります。わざと似せていないか確かめてください。','The real one is <a href="https://huggingface.co/{0}" target="_blank" rel="noopener">huggingface.co/{1}</a>. Fakes are sometimes published under look-alike names. Check whether this is imitating it.',[esc(look),esc(look)])});
+  } else info2.push({t:L('作者アカウントの情報を取得できませんでした','Could not get information about the author’s account'), x:esc(owner&&owner.__err||'')});
+
+  // 2. Hugging Face 自身の検査（ウイルス・危険な pickle の自動検査）
+  const S=info.securityRepoStatus;
+  if(S && Array.isArray(S.filesWithIssues)){
+    // ファイルごとの詳しい結果で見分ける
+    //   malicious … ウイルス対策ソフトが検出／JFrog が「悪意のあるコード」／pickle の中に eval・exec など危険な命令
+    //   generic   … ProtectAI の一般的な「pickle を含む」という指摘だけ（RVC の公式配布物などで出る。ウイルスではない）
+    //   unknown   … 詳しい結果を取れなかった（安全側に倒して危険扱い）
+    const verdict=f=>{
+      const fs=fileSec&&fileSec[f.path];
+      if(!fs) return 'unknown';
+      const st=k=>String(fs[k]&&fs[k].status||'');
+      const dangerousImport=((fs.pickleImportScan||{}).pickleImports||[]).some(p=>p.safety==='dangerous');
+      if(/unsafe|suspicious|malicious/i.test(st('avScan')) || /unsafe|malicious/i.test(st('jFrogScan')) || /unsafe|malicious/i.test(st('virusTotalScan')) || dangerousImport) return 'malicious';
+      return 'generic';
+    };
+    const why=f=>{
+      const fs=fileSec&&fileSec[f.path]; if(!fs) return '';
+      const out=[];
+      const av=(fs.avScan&&fs.avScan.message||'').replace(/^Detected malware signatures:\s*/i,'');
+      if(/unsafe|suspicious/i.test(String(fs.avScan&&fs.avScan.status))) out.push(L('ウイルス検出名 ','malware signature ')+'<code>'+esc(av.slice(0,60))+'</code>');
+      const imps=((fs.pickleImportScan||{}).pickleImports||[]).filter(p=>p.safety==='dangerous').map(p=>p.module+'.'+p.name);
+      if(imps.length) out.push(L('危険な命令 ','dangerous call ')+hostList([...new Set(imps)].slice(0,3)));
+      return out.length ? LT('（'+out.join('・')+'）',' ({0})',[out.join(L('、',', '))]) : '';
+    };
+    const flaggedAll=S.filesWithIssues;
+    const isUnsafe=f=>/unsafe|malicious|danger/i.test(f.level||'');
+    const mal=flaggedAll.filter(f=>isUnsafe(f) && verdict(f)==='malicious');
+    const unk=flaggedAll.filter(f=>isUnsafe(f) && verdict(f)==='unknown');
+    const gen=flaggedAll.filter(f=>isUnsafe(f) && verdict(f)==='generic');
+    const caution=flaggedAll.filter(f=>!isUnsafe(f));
+    const bad=[...mal,...unk];
+    if(mal.length) danger.push({t:L('Hugging Face の自動検査で、ウイルスや悪意のあるコードが見つかったファイルがあります','Hugging Face’s automatic scan found malware or malicious code in files'),
+      x:mal.slice(0,6).map(f=>'<code>'+esc(f.path)+'</code>'+why(f)).join(L('、',', '))+(mal.length>6?LT(' ほか '+(mal.length-6)+'件',' and {0} more',[(mal.length-6)]):'')+L('。ダウンロード・読み込みはしないでください。','. Do not download or load them.')});
+    if(unk.length) danger.push({t:L('Hugging Face の自動検査で「危険」と判定されたファイルがあります','Hugging Face’s automatic scan marked files as unsafe'),
+      x:LT(listFiles(unk.map(f=>f.path))+'。詳しい検査結果を確かめられなかったため、危険として扱っています。ダウンロード・読み込みはしないでください。','{0}. The detailed results could not be checked, so they are treated as dangerous. Do not download or load them.',[listFiles(unk.map(f=>f.path))])});
+    if(gen.length) warn.push({t:L('Hugging Face が「unsafe」と表示しているファイルがありますが、ウイルスが見つかったわけではありません','Hugging Face shows some files as “unsafe”, but no malware was found'),
+      x:LT(listFiles(gen.map(f=>f.path))+'。ウイルス対策ソフトの検査では問題が出ていません。「読み込むとプログラムが動きうる形式（pickle）を含む」という一般的な指摘です。'+(trusted?'作者には実績があるので、公式の配布物である可能性が高いですが、':'')+'中身を動かす前に、作者を信用できるか確かめてください。',
+          '{0}. Antivirus scans found nothing. This is a general warning that they contain a format that can run code when loaded (pickle). {1}make sure you trust the author before running them.',[listFiles(gen.map(f=>f.path)),(trusted?'The author has a track record, so these are probably official files, but ':'')])});
+    if(caution.length) (trusted?info2:warn).push({t:L('Hugging Face の自動検査で「要注意」と判定されたファイルがあります','Hugging Face’s automatic scan flagged files for caution'),
+      x:LT(listFiles(caution.map(f=>f.path))+'。危険とまでは言えないものの、中身を確かめたほうがよいファイルです。','{0}. Not clearly dangerous, but worth checking before use.',[listFiles(caution.map(f=>f.path))])});
+    // 古いリポジトリでも scansDone が false のことがある（大きすぎるファイルなどが検査の対象外になっている）
+    const recent = info.lastModified && ageDays(info.lastModified)<3;
+    if(!S.scansDone) info2.push({t:L('Hugging Face の自動検査を受けていないファイルがあります','Some files have not been scanned by Hugging Face'),
+      x: recent ? L('アップロードされたばかりのファイルがあります。しばらくしてから調べ直すと、検査結果が出ます。','Some files were uploaded very recently. Check again later to see the scan results.')
+                : L('大きすぎるファイルなど、検査の対象にならなかったファイルがあります。その分は、下のファイル形式の判定を参考にしてください。','Some files (very large ones, for example) were not scanned. For those, rely on the file format checks below.')});
+    else if(!flaggedAll.length) good.push({t:L('Hugging Face の自動検査で問題は見つかりませんでした','Hugging Face’s automatic scan found no problems'), x:L('ウイルスと、読み込むと勝手にプログラムを動かす仕掛け（危険な pickle）の検査です。すべてを見つけられるわけではありません。','This scans for malware and for code that runs automatically when loaded (unsafe pickle). It cannot catch everything.')});
+  } else if(kind==='model') info2.push({t:L('Hugging Face の自動検査の結果を取得できませんでした','Could not get Hugging Face’s automatic scan results'), x:L('検査の結果が公開されていません。ファイルの形式を下の項目で確かめてください。','No scan results are available. Check the file formats below.')});
+
+  // 3. ファイルの形式
+  const pickles=files.filter(isPickle), safes=files.filter(isSafeWeights);
+  if(kind!=='space' && pickles.length){
+    if(safes.length) info2.push({t:L('pickle 形式のファイルもありますが、安全な形式（safetensors など）も用意されています','Pickle files are present, but safe formats (such as safetensors) are also provided'),
+      x:LT(listFiles(pickles)+'。読み込むときは、safetensors や gguf のほうを選んでください。pickle は読み込むだけでプログラムが動きうる形式です。','{0}. When loading, choose the safetensors or gguf files. Pickle files can run code just by being loaded.',[listFiles(pickles)])});
+    else (trusted?info2:warn).push({t:L('読み込むだけでプログラムが動きうる形式（pickle）だけで配られています','It is distributed only in a format that can run code when loaded (pickle)'),
+      x:LT(listFiles(pickles)+'。.bin・.pt・.ckpt・.pkl などの pickle 形式は、読み込んだ瞬間に中の命令が動く仕組みを持てます。'+(trusted?'作者には実績があります。':'作者を信用できるときだけ読み込んでください。')+'安全な形式（safetensors）の版が別にないか探すのがおすすめです。',
+          '{0}. Pickle formats such as .bin, .pt, .ckpt and .pkl can contain commands that run the moment they are loaded. {1}Look for a safe (safetensors) version if you can.',[listFiles(pickles),(trusted?'The author has a track record. ':'Only load them if you trust the author. ')])});
+  }
+  // 4. 読み込むときに作者のプログラムが動く設定（trust_remote_code）
+  const cfg=info.config||{};
+  const pyRoot=files.filter(f=>/\.py$/i.test(f) && !f.includes('/'));
+  // trust_remote_code が要るのは transformers で読み込むモデルだけ：config の auto_map か、modeling_〇〇.py などの決まった名前のファイルがあるとき。
+  // それ以外の Python ファイル（RVC の infer.py など）は、自分で実行するスクリプトなので別扱い（lj1995/VoiceConversionWebUI で誤報）
+  const remoteCode = cfg.auto_map || pyRoot.some(f=>/^(modeling|configuration|tokenization|processing|image_processing|feature_extraction)_/i.test(f));
+  if(kind==='model' && !remoteCode && pyRoot.length && !trusted) info2.push({t:L('Python のプログラムが含まれています','It includes Python programs'),
+    x:LT(listFiles(pyRoot)+'。自分で実行するためのスクリプトです。実行する前に中身を確かめてください。','{0}. These are scripts for you to run yourself. Read them before running.',[listFiles(pyRoot)])});
+  if(kind==='model' && remoteCode) (trusted?info2:warn).push({t:L('読み込むときに作者のプログラムが動きます（trust_remote_code）','Loading it runs the author’s own code (trust_remote_code)'),
+    x:LT((pyRoot.length?listFiles(pyRoot)+'。':'')+'<code>trust_remote_code=True</code> を付けて読み込むと、このリポジトリの Python ファイルがあなたのパソコンで動きます。'+(trusted?'作者には実績があります。':'作者を信用できないなら、付けないでください。'),
+        '{0}Loading with <code>trust_remote_code=True</code> runs the Python files from this repository on your computer. {1}',[(pyRoot.length?listFiles(pyRoot)+'. ':''),(trusted?'The author has a track record.':'If you do not trust the author, do not use it.')])});
+  if(kind==='dataset' && pyRoot.length) (trusted?info2:warn).push({t:L('読み込み用の Python ファイルがあり、読み込むときに動きます','It has a Python loading script that runs when loaded'),
+    x:LT(listFiles(pyRoot)+'。古い形式のデータセットで、<code>load_dataset</code> がこのファイルを実行します。','{0}. This is an older style of dataset; <code>load_dataset</code> runs this file.',[listFiles(pyRoot)])});
+
+  // 5. 実行ファイル・偽装ファイル
+  const exes=files.filter(f=>/\.(exe|scr|msi|com|pif|bat|cmd|vbs|vbe|jse|wsf|hta|lnk|apk|dmg)$/i.test(f));
+  const dbl=files.filter(f=>/\.(pdf|docx?|xlsx?|jpe?g|png|gif|txt|mp3|mp4|wav)\.(exe|scr|com|pif|bat|cmd|vbs|lnk)$/i.test(f) || /[‪-‮⁦-⁩]/.test(f));
+  if(dbl.length) danger.push({t:L('拡張子を偽装したファイルがあります','It has files with disguised extensions'), x:LT(listFiles(dbl)+'。文書や画像に見せかけた実行ファイルです。開かないでください。','{0}. These are executables pretending to be documents or images. Do not open them.',[listFiles(dbl)])});
+  else if(exes.length && kind!=='space') (trusted?info2:warn).push({t:L('AI のモデルやデータには普通含まれない、実行ファイルがあります','It contains executables, which AI models and datasets do not normally include'), x:LT(listFiles(exes)+'。何のために置かれているのか分からなければ、ダウンロードしないでください。','{0}. If you do not know why they are there, do not download them.',[listFiles(exes)])});
+
+  // 6. 公開の状態
+  if(info.disabled) warn.push({t:L('Hugging Face によって公開が止められています','Hugging Face has disabled this repository'), x:L('規約違反などで公開が止められた可能性があります。使わないでください。','It may have been disabled for violating the rules. Do not use it.')});
+  if(info.gated) info2.push({t:L('使う前に、作者が決めた条件への同意が必要です（ゲート付き）','You must accept the author’s conditions before use (gated)'), x:L('Hugging Face にログインして、ページ上で同意すると使えるようになります。','Log in to Hugging Face and accept on the page to get access.')});
+  if(rd>=365 && likes>=100) good.push({t:LT('公開から '+ageText(rd)+'・いいね '+num(likes)+'件','Public for {0}, with {1} likes',[ageText(rd),num(likes)]), x:L('長く多くの人に使われてきた実績があります。','It has a long track record of use by many people.')});
+
+  // 7. Space の仕組み
+  if(kind==='space'){
+    const sdk=(info.sdk||(info.cardData&&info.cardData.sdk)||'').toLowerCase();
+    info2.push({t:L('ブラウザで動くデモ画面（Space）です','This is a demo app that runs in the browser (Space)'), x:LT('プログラムは Hugging Face のサーバーで動くので、開くだけならパソコンに何も入りません。ただし、入力した内容は作者のサーバーに送られます。パスワードや API キー、個人情報は入れないでください。'+(sdk==='docker'?' この Space は Docker で動いていて、中身を自由に作れる形式です。':''),
+      'The program runs on Hugging Face’s servers, so opening it installs nothing on your computer. But whatever you type is sent to the author’s server. Do not enter passwords, API keys, or personal information.{0}',[(sdk==='docker'?' This Space runs on Docker, which lets the author run anything.':'')])});
+    const stage=info.runtime&&info.runtime.stage;
+    if(stage && !/RUNNING|BUILDING|APP_STARTING|SLEEPING|PAUSED/.test(stage)) info2.push({t:LT('今は動いていません（状態：'+esc(stage)+'）','It is not running right now (status: {0})',[esc(stage)]), x:L('作者が止めているか、エラーで止まっています。','The author has stopped it, or it stopped because of an error.')});
+  }
+
+  // 8. README の言い回し（GitHub と同じ判定）
+  readmeSignals(readme||'', {trusted, established, homepage:'', fullName:''}, danger, warn, info2);
+
+  // 9. Space の requirements.txt（自分のパソコンに複製して動かす場合）
+  if(deps && !deps.err){
+    if(deps.malicious.length) danger.push({t:L('依存ライブラリに「悪意のあるパッケージ」として登録されたものがあります','A dependency is listed as a known malicious package'), x:LT(hostList(deps.malicious.map(m=>m.name))+'。この Space を複製して動かすと被害が出るおそれがあります。','{0}. Duplicating and running this Space could cause harm.',[hostList(deps.malicious.map(m=>m.name))])});
+    const serious=deps.vulnerable.filter(v=>v.top>=3 && !v.dev && !deps.malicious.includes(v));
+    if(serious.length) info2.push({t:LT('依存ライブラリに、重大な既知の脆弱性があります（'+serious.length+'個）','Dependencies have serious known vulnerabilities ({0})',[serious.length]), x:LT(serious.slice(0,5).map(v=>'<code>'+esc(v.name)+' '+esc(v.ver)+'</code>').join('、')+'。ブラウザで使うだけなら影響しません。自分のパソコンに複製して動かすときは、版を上げてください。','{0}. This does not affect you if you only use it in the browser. If you duplicate it to run on your computer, upgrade these.',[serious.slice(0,5).map(v=>'<code>'+esc(v.name)+' '+esc(v.ver)+'</code>').join(L('、',', '))])});
+  }
+  return {danger, warn, good, info:info2, deps, platform:'hf'};
+}
+
+/* ---------- 結果の下に足す欄 ----------
+   ① MIX 依頼の案内（日本語表示のときだけ。受付が日本語のみのため）② 作者向けの README バッジ
+   どちらも公開サイト用なので、Mac アプリでは .web-only で隠す。pages/build.mjs は <!--extras--> から後ろを切り取って使う */
+const SITE='https://repocheck.youmix.info/';
+function badgeMarkdown(target){
+  return '[![Checked with RepoCheck]('+SITE+'badge.svg)]('+SITE+'?url='+encodeURIComponent(target)+')';
+}
+function extrasHTML(target){
+  let h='<!--extras-->';
+  if(LANG==='ja') h+='<div class="box promo web-only"><p class="promo-t">🎤 歌ってみた・音声 AI の MIX は YOUMIX へ</p>'
+    +'<p>RepoCheck は、歌ってみたの MIX・マスタリングを請け負う <b>YOUMIX</b> が作っています。ボーカル分離や AI ボイスで作った音源の仕上げも、ご相談ください。</p>'
+    +'<a class="promo-btn" href="https://youmix.info/order?utm_source=repocheck&amp;utm_medium=result" target="_blank" rel="noopener">MIX の料金と依頼方法を見る →</a></div>';
+  const md=badgeMarkdown(target);
+  h+='<details class="box badgebox web-only"><summary>'+L('作者の方へ：README に「RepoCheck で診断」バッジを貼る','For the author: add a “Checked with RepoCheck” badge to your README')+'</summary>'
+    +'<p>'+L('押すと、このリポジトリの最新の診断結果が開きます。安全を保証する印ではなく、使う人が自分で確かめるための入口です。','Clicking it opens the latest check of this repository. It is not a seal of safety, just a quick way for users to check for themselves.')+'</p>'
+    +'<p><img src="badge.svg" alt="Checked with RepoCheck" width="160" height="20"></p>'
+    +'<pre>'+esc(md)+'</pre><button class="copy" data-cmd="'+esc(md)+'">'+L('コピー','Copy')+'</button></details>';
+  return h;
+}
+
+// コピー：Mac アプリはアプリ側のクリップボード（WebKit の制限のため）、ブラウザは clipboard API、使えなければ昔ながらの方法
+function legacyCopy(t){
+  return new Promise((ok,ng)=>{
+    const a=document.createElement('textarea'); a.value=t; a.setAttribute('readonly',''); a.style.position='fixed'; a.style.opacity='0';
+    document.body.appendChild(a); a.select(); let done=false; try{ done=document.execCommand('copy'); }catch(e){} a.remove();
+    done ? ok() : ng(new Error('copy failed'));
+  });
+}
+function copyText(t){
+  if(window.__nativeCopy) return Promise.resolve(window.__nativeCopy(t));
+  // clipboard API が断られた（権限・フォーカスなど）ときも、昔ながらの方法で試し直す
+  if(navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t).catch(()=>legacyCopy(t));
+  return legacyCopy(t);
+}
+// ボタンの文字を一時的に変える。元の文字は最初に覚えておく（素早く2回押すと「コピーしました」のまま戻らなくなっていた）
+function flashButton(b,t){
+  if(b.dataset.orig===undefined) b.dataset.orig=b.textContent;
+  b.textContent=t; clearTimeout(b._flash); b._flash=setTimeout(()=>{ b.textContent=b.dataset.orig; },1600);
+}
+function bindCopyButtons(){
+  outEl.querySelectorAll('.copy').forEach(b=>b.addEventListener('click',()=>{
+    copyText(b.dataset.cmd).then(
+      ()=>flashButton(b, L('コピーしました ✓','Copied ✓')),
+      ()=>flashButton(b, L('コピーできませんでした。手で選んでコピーしてください','Could not copy. Please select and copy it manually')));
+  }));
+}
+
+function renderHF(last, sec, scroll){
+  const {t, info}=last, id=t.id;
+  const url='https://huggingface.co/'+HF_PREFIX[t.kind]+id;
+  const kindName=L({model:'モデル',dataset:'データセット',space:'Space（デモ画面）'}[t.kind], {model:'Model',dataset:'Dataset',space:'Space (demo app)'}[t.kind]);
+  const updated=info.lastModified ? ageDays(info.lastModified) : null;
+  let h='<div class="box"><div class="repohead"><div>'
+    +'<p class="name"><a href="'+url+'" target="_blank" rel="noopener">'+esc(id)+'</a></p>'
+    +'<p class="desc">🤗 Hugging Face — '+kindName+(info.pipeline_tag?' · '+esc(info.pipeline_tag):'')+'</p></div></div>'
+    +'<div class="metas"><span class="meta">❤️ '+L('いいね','Likes')+' <b>'+num(info.likes)+'</b></span>'
+    +(t.kind!=='space'?'<span class="meta">⬇ '+L('ダウンロード（30日）','Downloads (30 days)')+' <b>'+num(info.downloads)+'</b></span>':'')
+    +(info.lastModified?'<span class="meta">🕒 '+L('最終更新','Last updated')+' <b>'+new Date(info.lastModified).toLocaleDateString(locale())+'</b></span>':'')
+    +'</div></div>';
+  // ライセンス（URL を貼ってすぐ見えるように、いちばん上に置く）
+  const card=info.cardData||{};
+  let licId=card.license || ((info.tags||[]).find(x=>/^license:/.test(x))||'').slice(8);
+  if(Array.isArray(licId)) licId=licId[0]||'';
+  licId=String(licId||'');
+  const licName=(licId.toLowerCase()==='other' && card.license_name) ? String(card.license_name) : licId;
+  const licFile=(last.files||[]).find(f=>/^(licen[sc]e|copying)([.\-_][^/]*)?$/i.test(f));
+  const licLink=licFile ? url+'/blob/main/'+encodeURIComponent(licFile) : (/^https:\/\//i.test(card.license_link||'') ? card.license_link : url);
+  h+=licenseBox(licenseInfo(licId ? {spdx_id:licId, name:licName} : null), licLink, licLink!==url);
+  h+=renderSafety(sec);
+  // 使い方
+  const lib=(info.library_name||'').toLowerCase(), files=last.files;
+  const routes=[];
+  if(t.kind==='space') routes.push({tt:L('🌐 ブラウザで開くだけ','🌐 Just open it in your browser'), x:L('ページを開くと、その場で使えます。','Open the page and use it right there.'), link:url});
+  if(t.kind==='space') routes.push({tt:L('💻 自分のパソコンに複製して動かす（上級）','💻 Duplicate it and run it on your computer (advanced)'), x:L('中身のプログラムを丸ごと持ってきます。安全性の欄を確かめてから行ってください。','This copies the whole program. Check the safety section first.'), cmd:'git clone https://huggingface.co/spaces/'+id});
+  if(t.kind==='dataset') routes.push({tt:L('🐍 Python で読み込む','🐍 Load it with Python'), x:L('datasets ライブラリで読み込みます。','Load it with the datasets library.'), cmd:'pip install datasets\npython3 -c "from datasets import load_dataset; ds = load_dataset(\''+id+'\'); print(ds)"'});
+  if(t.kind==='model'){
+    if(files.some(f=>/\.gguf$/i.test(f))) routes.push({tt:L('🦙 Ollama で動かす（gguf 形式）','🦙 Run it with Ollama (gguf format)'), x:L('Ollama（無料のアプリ）を入れておけば、1行で動きます。','With Ollama (a free app) installed, one line runs it.'), cmd:'ollama run hf.co/'+id});
+    if(lib==='transformers' && info.pipeline_tag) routes.push({tt:L('🐍 Python（transformers）で動かす','🐍 Run it with Python (transformers)'), x:L('仮想環境（venv）を作ってから入れてください。','Create a virtual environment (venv) before installing.'), cmd:'python3 -m venv venv\nsource venv/bin/activate\npip install transformers torch\npython3 -c "from transformers import pipeline; p = pipeline(\''+info.pipeline_tag+'\', model=\''+id+'\'); print(p)"'});
+    else if(lib==='diffusers') routes.push({tt:L('🎨 Python（diffusers）で動かす','🎨 Run it with Python (diffusers)'), x:L('画像生成のライブラリです。GPU が無いと非常に遅くなります。','This is an image generation library. It is very slow without a GPU.'), cmd:'pip install diffusers transformers torch\npython3 -c "from diffusers import DiffusionPipeline; p = DiffusionPipeline.from_pretrained(\''+id+'\'); print(p)"'});
+    else if(lib==='sentence-transformers') routes.push({tt:L('🐍 Python（sentence-transformers）で動かす','🐍 Run it with Python (sentence-transformers)'), x:L('文章をベクトルにするライブラリです。','A library for turning text into vectors.'), cmd:'pip install sentence-transformers\npython3 -c "from sentence_transformers import SentenceTransformer; m = SentenceTransformer(\''+id+'\'); print(m)"'});
+    if(!routes.length) routes.push({tt:L('📖 モデルのページの説明を読む','📖 Read the model page'), x:L('使い方が決まった形ではありません。ページの説明（モデルカード）を読んでください。','There is no standard way to use it. Read the description on the page (the model card).'), link:url});
+  }
+  h+='<div class="box"><h2>'+L('使い方','How to use it')+'</h2>';
+  routes.forEach((r,i)=>{
+    h+='<div class="route'+(i===0?' best':'')+'"><p class="rt">'+r.tt+(i===0?'<span class="badge">'+L('おすすめ','Recommended')+'</span>':'')+'</p><p class="rd">'+r.x+(r.link?' <a href="'+r.link+'" target="_blank" rel="noopener">'+L('開く →','Open →')+'</a>':'')+'</p>';
+    if(r.cmd) h+='<pre>'+esc(r.cmd)+'</pre><button class="copy" data-cmd="'+esc(r.cmd).replace(/\n/g,'&#10;')+'">'+L('コマンドをコピー','Copy commands')+'</button>';
+    h+='</div>';
+  });
+  h+='</div>';
+  // 更新
+  if(updated!==null){
+    const cls=updated<=365?'v-ok':updated<=730?'v-warn':'v-ng';
+    h+='<div class="box"><h2>'+L('更新の状況','Update status')+'</h2><div class="verdict '+cls+'">'+LT('最終更新 '+ageText(updated)+'前','Last updated {0} ago',[ageText(updated)])+'</div></div>';
+  }
+  if(last.readmeErr) h+='<div class="box"><ul class="notes"><li>'+LT('<b>⚠ 説明（README）を取得できませんでした</b>（'+esc(last.readmeErr)+'）。文章の危険な言い回しは調べられていません。','<b>⚠ Could not get the README</b> ({0}). Wording in the description was not checked.',[esc(last.readmeErr)])+'</li></ul></div>';
+  h+=extrasHTML(url);
+  outEl.innerHTML=h;
+  outEl.classList.add('show');
+  bindCopyButtons();
+  if(scroll!==false) outEl.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ---------- メイン ---------- */
+function render(repo, langs, contents, readme, releases, errs, sec, scroll){
+  errs=errs||{};
+  const files=new Set(contents.filter(c=>c.type==='file').map(c=>c.name.toLowerCase()));
+  const dirs=new Set(contents.filter(c=>c.type==='dir').map(c=>c.name.toLowerCase()));
+  const all=new Set([...files,...dirs]);
+  const has=n=>files.has(n);
+  const anyEnd=ext=>[...all].some(n=>n.endsWith(ext));
+  const R=readme||'';
+  const RL=R.toLowerCase();
+
+  const isPython = has('requirements.txt')||has('pyproject.toml')||has('setup.py')||has('environment.yml')||has('pipfile')||anyEnd('.py');
+  const isNode   = has('package.json');
+  const isDocker = has('dockerfile')||has('docker-compose.yml')||has('docker-compose.yaml')||has('compose.yml');
+  // index.html があっても、Python/Node/Docker のプロジェクトなら「開くだけ」では動かない
+  const isStatic = has('index.html') && !isNode && !isPython && !isDocker;
+  const isXcode  = anyEnd('.xcodeproj')||anyEnd('.xcworkspace');
+  const isCpp    = has('cmakelists.txt')||anyEnd('.jucer');
+  const isRust   = has('cargo.toml');
+  const isGo     = has('go.mod');
+  const hasColab = /colab\.research\.google\.com/i.test(R);
+  const hasHF    = /huggingface\.co\/spaces/i.test(R);
+  const relAssets = releases.filter(r=>r.assets&&r.assets.length>0);
+  const hasRelease = relAssets.length>0;
+  const relNames = hasRelease ? relAssets[0].assets.map(a=>a.name.toLowerCase()).join(' ') : '';
+  const relForMac = /\.dmg|\.pkg|mac|osx|darwin|universal/.test(relNames);
+
+  const clone='https://github.com/'+repo.full_name+'.git';
+  const dir=repo.name;
+
+  /* --- ルート判定 --- */
+  const routes=[];
+  if(hasColab) routes.push({d:1,t:L('☁️ ブラウザだけで試せます（Google Colab）','☁️ Try it in your browser (Google Colab)'),
+    x:L('READMEに Colab のリンクがあります。Googleのサーバー上で動くので、パソコンには何もインストールせずに試せます。まずはこれから。','The README links to Colab. It runs on Google’s servers, so you can try it without installing anything. Start here.'),cmd:null});
+  if(hasHF) routes.push({d:1,t:L('🤗 動くデモが公開されています（Hugging Face Spaces）','🤗 There is a live demo (Hugging Face Spaces)'),
+    x:L('READMEに Hugging Face Spaces のリンクがあります。ボタンを押すだけで動作を確認できます。','The README links to Hugging Face Spaces. You can see it working with a single click.'),cmd:null});
+  if(hasRelease) routes.push({d:1,t:L('📦 完成品をダウンロードするだけ（Releases）','📦 Just download a finished build (Releases)'),
+    x:LT('配布ファイルが用意されています。'+(relForMac?'Mac向けらしきファイルが含まれています。':'ファイル名を見て、Mac用（.dmg / mac / arm64 など）があるか確認してください。')+' プログラムの知識は不要です。',
+        'Ready-made downloads are available. {0} No programming knowledge needed.',[(relForMac?'There seems to be a Mac version.':'Check the file names for a Mac version (.dmg / mac / arm64 etc.).')]),
+    link:'https://github.com/'+repo.full_name+'/releases',cmd:null});
+  if(isStatic) routes.push({d:1,t:L('🌐 ファイルを開くだけ（HTML）','🌐 Just open the file (HTML)'),
+    x:L('ダウンロードして index.html をダブルクリックすれば動きます。インストール作業はありません。','Download it and double-click index.html. There is nothing to install.'),cmd:null});
+  if(isDocker) routes.push({d:2,t:L('🐳 Docker で動かす','🐳 Run it with Docker'),
+    x:L('環境ごと再現できるので、実は手作業のインストールより失敗が少ない方法です。Docker Desktop（無料）を先に入れてください。','It recreates the whole environment, so it actually fails less often than installing by hand. Install Docker Desktop (free) first.'),
+    cmd:'git clone '+clone+'\ncd '+dir+'\ndocker compose up'});
+  if(isPython) routes.push({d:3,t:L('🐍 Python で動かす','🐍 Run it with Python'),
+    x:L('仮想環境（venv）を作ってから必要なライブラリを入れます。venv を作らずに入れるとパソコン全体のPython環境が壊れるので必ず作ってください。','Create a virtual environment (venv) first, then install the libraries. Installing without a venv can break Python for your whole computer, so always create one.'),
+    cmd:'git clone '+clone+'\ncd '+dir+'\npython3 -m venv venv\nsource venv/bin/activate\npip install -r '+(has('requirements.txt')?'requirements.txt':(has('pyproject.toml')?L('. # pyproject.toml があるので pip install . ','. # pyproject.toml found, so use pip install . '):'requirements.txt'))+L('\n\n# 終わったら（仮想環境を抜ける）\n# deactivate','\n\n# When you are done (leave the virtual environment)\n# deactivate')});
+  if(isNode) routes.push({d:3,t:L('🟩 Node.js で動かす','🟩 Run it with Node.js'),
+    x:L('Node.js（LTS版）を先に入れてください。npm install で必要なものが自動で揃います。','Install Node.js (LTS) first. npm install gets everything else automatically.'),
+    cmd:'git clone '+clone+'\ncd '+dir+'\nnpm install\nnpm run dev   '+L('# または npm start（package.json の scripts を確認）','# or npm start (check "scripts" in package.json)')});
+  if(isRust) routes.push({d:4,t:L('🦀 Rust でビルド','🦀 Build it with Rust'),x:L('Rust のツールチェーン（rustup）が必要です。','You need the Rust toolchain (rustup).'),
+    cmd:'git clone '+clone+'\ncd '+dir+'\ncargo run --release'});
+  if(isGo) routes.push({d:4,t:L('🐹 Go でビルド','🐹 Build it with Go'),x:L('Go の実行環境が必要です。','You need Go installed.'),
+    cmd:'git clone '+clone+'\ncd '+dir+'\ngo run .'});
+  if(isXcode) routes.push({d:5,t:L('📱 Xcode で開いてビルド','📱 Open and build it in Xcode'),x:L('Xcode が必要です。実機で動かす場合は Apple ID での署名設定も必要になります。','You need Xcode. To run it on a real device, you also need to set up signing with your Apple ID.'),
+    cmd:'git clone '+clone+'\ncd '+dir+'\nopen *.xcodeproj'});
+  if(isCpp) routes.push({d:5,t:L('⚙️ C++ をビルド（上級）','⚙️ Build the C++ code (advanced)'),
+    x:L('CMake などでのビルドが必要です。プラグイン開発向けのリポジトリによくある形式です。','You need to build it with CMake or similar. This is common for plugin development repositories.'),
+    cmd:'git clone --recursive '+clone+'\ncd '+dir+'\ncmake -B build\ncmake --build build --config Release'});
+  if(routes.length===0) routes.push({d:3,t:L('❓ 判定できませんでした','❓ Could not determine'),
+    x: errs.tree
+      ? LT('ファイル一覧を取得できなかったため判定できませんでした（'+esc(errs.tree)+'）。README を直接読んで、インストール手順（Installation / Usage）をご確認ください。','The file list could not be retrieved ({0}). Read the README and look for the Installation / Usage section.',[esc(errs.tree)])
+      : L('定番の設定ファイルが見つかりませんでした。README を直接読んで、インストール手順（Installation / Usage の項目）を確認してください。','No standard setup files were found. Read the README and look for the Installation / Usage section.'),cmd:null});
+  routes.sort((a,b)=>a.d-b.d);
+
+  /* --- 難易度 --- */
+  let diff=routes[0].d;
+  const needsGPU = /\bcuda\b|nvidia|gpu が必要|requires? (a )?gpu/i.test(R);
+  const winOnly = /windows only|windows専用/i.test(R);
+  if(needsGPU&&!hasColab) diff=Math.min(5,diff+1);
+  const days=Math.round((Date.now()-new Date(repo.pushed_at))/86400000);
+  if(days>730) diff=Math.min(5,diff+1);
+  const stars='★'.repeat(diff)+'<i>'+'☆'.repeat(5-diff)+'</i>';
+  const diffWord=L(['','とても簡単（知識ほぼ不要）','やや簡単（手順どおりでOK）','ふつう（ターミナル操作が必要）','やや難しい（環境構築の知識が必要）','難しい（開発者向け）'],
+                   ['','Very easy (almost no knowledge needed)','Fairly easy (just follow the steps)','Moderate (needs the Terminal)','Fairly hard (needs setup experience)','Hard (for developers)'])[diff];
+
+  /* --- ライセンス --- */
+  const lic=licenseInfo(repo.license);
+
+  /* --- メンテ状況 --- */
+  let maint, maintCls;
+  if(repo.archived){ maint=L('アーカイブ済み（開発終了）— 動かない可能性が高い','Archived (no longer developed) — likely not to work'); maintCls='v-ng'; }
+  else if(days<=90){ maint=LT('活発（最終更新 '+days+'日前）','Active (last updated {0} ago)',[plural(days,'day','days')]); maintCls='v-ok'; }
+  else if(days<=365){ maint=LT('ゆるやかに更新中（最終更新 '+Math.round(days/30)+'か月前）','Updated occasionally (last updated {0} ago)',[plural(Math.round(days/30),'month','months')]); maintCls='v-ok'; }
+  else if(days<=730){ maint=LT('やや停滞（最終更新 '+Math.round(days/30)+'か月前）— 動作しないことがあります','Slowing down (last updated {0} ago) — may not work',[plural(Math.round(days/30),'month','months')]); maintCls='v-warn'; }
+  else { maint=LT('ほぼ放置（最終更新 '+(days/365).toFixed(1)+'年前）— そのままでは動かない可能性が高い','Mostly abandoned (last updated {0} years ago) — likely not to work as is',[(days/365).toFixed(1)]); maintCls='v-ng'; }
+
+  /* --- 注意点 --- */
+  const notes=[];
+  if(errs.tree) notes.push(LT('<b>⚠ ファイル一覧を取得できませんでした</b>（'+esc(errs.tree)+'）。必要な技術の判定は不完全です。','<b>⚠ Could not get the file list</b> ({0}). The technology check is incomplete.',[esc(errs.tree)]));
+  if(errs.readme) notes.push(LT('<b>⚠ README を取得できませんでした</b>（'+esc(errs.readme)+'）。Colab の有無やGPU要否は判定できていません。','<b>⚠ Could not get the README</b> ({0}). Colab links and GPU requirements were not checked.',[esc(errs.readme)]));
+  const pyv=R.match(/python\s*(?:>=?\s*)?3\.(\d{1,2})/i);
+  if(isPython&&pyv) notes.push(LT('READMEに <b>Python 3.'+pyv[1]+'</b> の記載があります。手元のバージョンが違うと失敗しやすいので合わせてください（確認：<code>python3 --version</code>）。','The README mentions <b>Python 3.{0}</b>. A different version often causes failures, so match it (check with <code>python3 --version</code>).',[pyv[1]]));
+  if(needsGPU) notes.push(L('<b>NVIDIA GPU（CUDA）前提</b>の記述があります。Macでは動かないか、非常に遅くなる可能性があります。Google Colab の無料GPUを使うのが現実的です。','It mentions <b>requiring an NVIDIA GPU (CUDA)</b>. It may not run on a Mac, or run very slowly. Google Colab’s free GPU is the practical option.'));
+  if(winOnly) notes.push(L('<b>Windows専用</b>の可能性があります。Macでの動作は期待しないでください。','It may be <b>Windows only</b>. Do not expect it to work on a Mac.'));
+  if(repo.fork) notes.push(L('これは<b>フォーク（誰かのコピー）</b>です。本家のほうが更新されているかもしれません。','This is a <b>fork (a copy of another repository)</b>. The original may be more up to date.'));
+  if(repo.open_issues_count>300) notes.push(LT('未解決のIssueが '+repo.open_issues_count+' 件あります。詰まったときの情報源としては豊富ですが、不具合も多い可能性があります。','There are {0} open issues. That is plenty of help when you get stuck, but it may also mean many bugs.',[repo.open_issues_count]));
+  if(repo.stargazers_count<50) notes.push(LT('Star が '+repo.stargazers_count+' と少なめです。情報が少なく、詰まったときに自力で解決する必要があります。','It has only {0}. There is little help available, so you may have to solve problems on your own.',[plural(repo.stargazers_count,'star','stars')]));
+  notes.push(LT('エラーが出たら、<b>エラー文をコピーして <a href="https://github.com/'+repo.full_name+'/issues?q=" target="_blank" rel="noopener">このリポジトリのIssues</a> 内で検索</b>してください。同じ問題の人がほぼ必ずいます。',
+               'When you hit an error, <b>copy the error message and search <a href="https://github.com/{0}/issues?q=" target="_blank" rel="noopener">this repository’s Issues</a></b>. Someone has almost always had the same problem.',[repo.full_name]));
+
+  /* --- 言語バー --- */
+  const palette=['#5AA0F2','#3ad29f','#E0A94A','#C77DFF','#FF7A45','#9EAEC2'];
+  const total=Object.values(langs).reduce((a,b)=>a+b,0)||1;
+  const langEntries=Object.entries(langs).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const langBar=langEntries.map((e,i)=>'<i style="width:'+(e[1]/total*100)+'%;background:'+palette[i%6]+'"></i>').join('');
+  const langList=langEntries.map((e,i)=>'<span><span class="dot" style="background:'+palette[i%6]+'"></span>'+esc(e[0])+' '+(e[1]/total*100).toFixed(1)+'%</span>').join('');
+
+  /* --- 出力 --- */
+  let h='';
+  h+='<div class="box"><div class="repohead"><div>'
+   + '<p class="name"><a href="'+repo.html_url+'" target="_blank" rel="noopener">'+esc(repo.full_name)+'</a></p>'
+   + '<p class="desc">'+esc(repo.description||L('（説明なし）','(no description)'))+'</p></div></div>'
+   + '<div class="metas">'
+   + '<span class="meta">⭐ Star <b>'+repo.stargazers_count.toLocaleString()+'</b></span>'
+   + '<span class="meta">🍴 Fork <b>'+repo.forks_count.toLocaleString()+'</b></span>'
+   + '<span class="meta">📄 '+L('未解決Issue','Open issues')+' <b>'+repo.open_issues_count.toLocaleString()+'</b></span>'
+   + '<span class="meta">🕒 '+L('最終更新','Last updated')+' <b>'+new Date(repo.pushed_at).toLocaleDateString(locale())+'</b></span>'
+   + '</div>'
+   + (langEntries.length?'<div style="margin-top:14px"><div class="langbar">'+langBar+'</div><div class="langlist">'+langList+'</div></div>':'')
+   + '</div>';
+
+  // ライセンス（URL を貼ってすぐ見えるように、いちばん上に置く）。直下の LICENSE などがあれば、その本文へのリンクを出す
+  const licFile=contents.find(c=>c.type==='file' && /^(licen[sc]e|copying|unlicense)([.\-_].*)?$/i.test(c.name));
+  h+=licenseBox(lic, licFile ? repo.html_url+'/blob/HEAD/'+encodeURIComponent(licFile.name) : repo.html_url, !!licFile);
+
+  if(sec) h+=renderSafety(sec);
+
+  h+='<div class="box"><h2>'+L('難易度（★が多いほど難しい）','Difficulty (more ★ = harder)')+'</h2>'
+   + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="stars">'+stars+'</span>'
+   + '<span style="font-size:14.5px;font-weight:600">'+diff+' / 5 — '+diffWord+'</span></div></div>';
+
+  h+='<div class="box"><h2>'+L('使い方のルート（上ほどおすすめ）','Ways to use it (best first)')+'</h2>';
+  routes.forEach((r,i)=>{
+    h+='<div class="route'+(i===0?' best':'')+'">'
+     + '<p class="rt">'+r.t+(i===0?'<span class="badge">'+L('おすすめ','Recommended')+'</span>':'')+'</p>'
+     + '<p class="rd">'+r.x+(r.link?' <a href="'+r.link+'" target="_blank" rel="noopener">'+L('Releasesを開く →','Open Releases →')+'</a>':'')+'</p>';
+    if(r.cmd){
+      h+='<pre>'+esc(r.cmd)+'</pre><button class="copy" data-cmd="'+esc(r.cmd).replace(/\n/g,'&#10;')+'">'+L('コマンドをコピー','Copy commands')+'</button>';
+    }
+    h+='</div>';
+  });
+  h+='<p style="font-size:12.5px;color:var(--muted);margin:6px 0 0">'+L('※ コマンドは「ターミナル」アプリに貼り付けて Enter で実行します。1行ずつ実行してください。','* Paste the commands into the Terminal app and press Enter. Run them one line at a time.')+'</p></div>';
+
+  h+='<div class="box"><h2>'+L('今も動きそうか','Does it still work?')+'</h2>'
+   + '<div class="verdict '+maintCls+'">'+maint+'</div></div>';
+
+  h+='<div class="box"><h2>'+L('注意点・つまずきポイント','Things to watch out for')+'</h2><ul class="notes"><li>'+notes.join('</li><li>')+'</li></ul></div>';
+
+  h+=extrasHTML('https://github.com/'+repo.full_name);
+  outEl.innerHTML=h;
+  outEl.classList.add('show');
+  bindCopyButtons();
+  if(scroll!==false) outEl.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ---------- リンクから開いたときの自動診断 ----------
+   ?url=… 付きで開かれたら（専用ページのボタン・README のバッジ）その URL を診断する。
+   アドレス欄からはすぐ消す（広告や解析のプログラムに渡らないように。?lang= は残す） */
+(function(){
+  let q='';
+  try{
+    const sp=new URLSearchParams(location.search); q=(sp.get('url')||'').slice(0,500);
+    if(sp.has('url')){ sp.delete('url'); const rest=sp.toString(); history.replaceState(null,'',location.pathname+(rest?'?'+rest:'')+location.hash); }
+  }catch(e){}
+  if(q){ urlEl.value=q; run(); }
+})();
+
+/* ---------- 応援（投げ銭）のリンク ----------
+   DONATE_URL に受け取りページ（Ko-fi・OFUSE など）の URL を入れるとフッターに出る。空のあいだは出さない */
+const DONATE_URL='';
+(function(){
+  const w=document.getElementById('donateWrap'), a=document.getElementById('donateLink');
+  if(!DONATE_URL || !w || !a || document.documentElement.classList.contains('in-app')) return;
+  a.href=DONATE_URL; w.hidden=false;
+})();
+
+/* ---------- 広告（Google AdSense） ----------
+   ADSENSE_CLIENT に AdSense の「サイト運営者 ID」（ca-pub-…）を入れると広告が出る。空のあいだは出さない。
+   公開サイト（repocheck.youmix.info）だけで読み込む。Mac アプリや手元の確認では出さない。
+   どこにどれだけ出すかは AdSense の管理画面の「自動広告」で決める。 */
+const ADSENSE_CLIENT='ca-pub-2627222368508836';
+(function(){
+  let host=''; try{ host=location.hostname; }catch(e){}
+  if(!ADSENSE_CLIENT || host!=='repocheck.youmix.info') return;
+  const s=document.createElement('script');
+  s.async=true; s.crossOrigin='anonymous';
+  s.src='https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client='+encodeURIComponent(ADSENSE_CLIENT);
+  s.onerror=()=>console.warn('広告を読み込めませんでした（広告ブロッカーなど）');
+  document.head.appendChild(s);
+  document.getElementById('adNote').hidden=false;
+})();
+</script>
+
+<script>
+/* ---------- 演出（見た目だけ。判定の処理には触らない） ----------
+   本体のスクリプトとは別にしてある：検証台（tests/）は「いちばん長い <script>」だけを動かすので、ここは読まれない。
+   ① 背景の星座（点＝部品、線＝つながり）② 診断中の反応 ③ 結果のまとめカード ④ 欄が順に浮かぶ動き ⑤ マウスに付いてくる光 */
+(function(){
+  const root=document.documentElement;
+  const reduce=window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const go=document.getElementById('go'), out=document.getElementById('out');
+
+  /* ① 背景の星座 */
+  const cv=document.getElementById('sky');
+  const ctx=cv && cv.getContext && cv.getContext('2d');
+  let W=0,H=0,dpr=1,nodes=[],pulses=[],mouse={x:-9999,y:-9999},scanning=false,running=false,last=0;
+  const COLORS=['94,230,217','90,160,242','165,146,255','139,194,255'];
+  function resize(){
+    if(!ctx) return;
+    dpr=Math.min(window.devicePixelRatio||1,2); W=innerWidth; H=innerHeight;
+    cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+    const n=Math.round(Math.min(110,Math.max(36,W*H/16000)));
+    nodes=Array.from({length:n},(_,i)=>nodes[i]||{x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,r:Math.random()*1.6+.6,c:COLORS[i%4],ph:Math.random()*6.28});
+    if(!running) draw(0);
+  }
+  function draw(t){
+    const dt=Math.min(50,t-last||16); last=t;
+    ctx.clearRect(0,0,W,H);
+    const speed=scanning?3.2:1, LINK=Math.min(150,W/7);
+    for(const p of nodes){
+      p.x+=p.vx*speed*dt/16; p.y+=p.vy*speed*dt/16;
+      if(p.x<-20)p.x=W+20; if(p.x>W+20)p.x=-20; if(p.y<-20)p.y=H+20; if(p.y>H+20)p.y=-20;
+    }
+    for(let i=0;i<nodes.length;i++){
+      const a=nodes[i];
+      for(let j=i+1;j<nodes.length;j++){
+        const b=nodes[j], dx=a.x-b.x, dy=a.y-b.y, d=Math.hypot(dx,dy);
+        if(d<LINK){
+          const near=Math.max(0,1-Math.hypot((a.x+b.x)/2-mouse.x,(a.y+b.y)/2-mouse.y)/220);
+          ctx.strokeStyle='rgba('+a.c+','+((1-d/LINK)*(.13+near*.35+(scanning?.12:0)))+')';
+          ctx.lineWidth=.8; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+        }
+      }
+    }
+    for(const p of nodes){
+      const tw=.55+.45*Math.sin(t/900+p.ph);
+      const near=Math.max(0,1-Math.hypot(p.x-mouse.x,p.y-mouse.y)/180);
+      ctx.fillStyle='rgba('+p.c+','+(.35+tw*.4+near*.4)+')';
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r+near*1.4,0,6.283); ctx.fill();
+    }
+    // 診断中：入力欄からレーダーの輪が広がる
+    for(let k=pulses.length-1;k>=0;k--){
+      const q=pulses[k]; q.r+=dt*.55; const life=1-q.r/q.max;
+      if(life<=0){ pulses.splice(k,1); continue; }
+      ctx.strokeStyle='rgba(94,230,217,'+(life*.28)+')'; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.arc(q.x,q.y,q.r,0,6.283); ctx.stroke();
+    }
+    if(scanning && (!pulses.length || pulses[pulses.length-1].r>140)){
+      const r=go.getBoundingClientRect(); pulses.push({x:r.left+r.width/2,y:r.top+r.height/2,r:10,max:Math.max(W,H)*.75});
+    }
+  }
+  function loop(t){ if(!running) return; draw(t); requestAnimationFrame(loop); }
+  function setRun(on){ on=on && !reduce && !document.hidden; if(on===running) return; running=on; if(on){ last=performance.now(); requestAnimationFrame(loop); } }
+  if(ctx){
+    addEventListener('resize',resize); resize();
+    addEventListener('pointermove',e=>{ mouse.x=e.clientX; mouse.y=e.clientY; },{passive:true});
+    document.addEventListener('visibilitychange',()=>setRun(true));
+    setRun(true);
+  }
+
+  /* ② 診断中：ボタンが押せない間＝診断中。ふちの光・状態表示のくるくる・星座の加速 */
+  if(go && window.MutationObserver){
+    new MutationObserver(()=>{ scanning=go.disabled; root.classList.toggle('scanning',scanning); if(!scanning) pulses.length=0; })
+      .observe(go,{attributes:true,attributeFilter:['disabled']});
+  }
+
+  /* ③ 結果のまとめカード ④ 欄が順に浮かぶ
+     まとめの文はすべて、画面に出ている判定・ライセンスの文を写すだけ（新しい文は作らない＝訳の追加が要らない） */
+  const ICON={ok:'✓',warn:'!',ng:'✕'}, FILL={ok:1,warn:.62,ng:.3};
+  let lastName=null;  // 前に表示した診断。言語の切り替えで同じ結果を描き直すときは、浮かび上がる動きをやり直さない
+  const clean=t=>(t||'').replace(/^[\s⛔⚠✅🛡📜️]+/u,'').trim();
+  function buildSummary(){
+    if(!out.classList.contains('show') || out.querySelector('.summary')) return;
+    const boxes=[...out.querySelectorAll(':scope > .box')];
+    const safety=boxes.find(b=>b.querySelector('.sig, .sigh')) || boxes.find(b=>!b.classList.contains('licbox') && b.querySelector(':scope > .verdict'));
+    const v=safety && safety.querySelector(':scope > .verdict');
+    if(!v) return;
+    const st=v.classList.contains('v-ng')?'ng':v.classList.contains('v-warn')?'warn':'ok';
+    const n=c=>safety.querySelectorAll('.sig.'+c).length;
+    const name=out.querySelector('.repohead .name');
+    const lic=out.querySelector('.licbox .lic-head');
+    const el=document.createElement('div'); el.className='summary s-'+st; el.setAttribute('aria-hidden','true');
+    let pills='';
+    if(n('d')) pills+='<span class="sum-pill p-d">⛔ '+n('d')+'</span>';
+    if(n('w')) pills+='<span class="sum-pill p-w">⚠ '+n('w')+'</span>';
+    if(n('g')) pills+='<span class="sum-pill p-g">✓ '+n('g')+'</span>';
+    if(lic) pills+='<span class="sum-pill p-lic">📜 '+lic.querySelector('.lic-name').textContent+'</span>';
+    el.innerHTML='<div class="orb"><svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="54"/><circle class="arc" cx="60" cy="60" r="54"/></svg><div class="ico">'+ICON[st]+'</div></div>'
+      +'<div><p class="sum-name"></p><p class="sum-say"></p><div class="sum-row">'+pills+'</div></div><div class="sum-nav"></div>';
+    const nm=name?name.textContent:'';
+    const again=(nm===lastName); lastName=nm; out.classList.toggle('still',again);
+    el.querySelector('.sum-name').textContent=nm;
+    el.querySelector('.sum-say').textContent=clean(v.textContent);
+    // 目次：各欄の見出しへ飛ぶ
+    const nav=el.querySelector('.sum-nav');
+    boxes.forEach(b=>{ const h=b.querySelector(':scope > h2'); if(!h) return; const bt=document.createElement('button'); bt.type='button'; bt.textContent=h.textContent; bt.tabIndex=-1;
+      bt.addEventListener('click',()=>b.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'})); nav.appendChild(bt); });
+    if(!nav.children.length) nav.remove();
+    out.insertBefore(el,out.firstChild);
+    [...out.children].forEach((c,i)=>c.style.setProperty('--i',i));
+    const arc=el.querySelector('.arc');
+    if(again){ arc.style.transition='none'; arc.style.strokeDashoffset=String(339.3*(1-FILL[st])); }
+    else requestAnimationFrame(()=>requestAnimationFrame(()=>{ arc.style.strokeDashoffset=String(339.3*(1-FILL[st])); }));
+  }
+  if(out && window.MutationObserver){
+    new MutationObserver(buildSummary).observe(out,{childList:true,attributes:true,attributeFilter:['class']});
+    buildSummary();
+  }
+
+  /* ⑤ マウスの位置に、欄のふちがうっすら光る */
+  document.addEventListener('pointermove',e=>{
+    const b=e.target.closest && e.target.closest('.box'); if(!b) return;
+    const r=b.getBoundingClientRect(); b.style.setProperty('--mx',(e.clientX-r.left)+'px'); b.style.setProperty('--my',(e.clientY-r.top)+'px');
+  },{passive:true});
+})();
+</script>
+
+</body>
+</html>

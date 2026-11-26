@@ -1,0 +1,10 @@
+// RepoCheck の公開設定（Cloudflare Workers の静的サイト）
+// public/ は「公開する.command」が毎回作り直す（Git には入れない）
+{
+  "name": "repocheck",
+  "account_id": "ここに自分の Cloudflare アカウントIDを入れる",
+  "compatibility_date": "2025-06-01",
+  "assets": { "directory": "./public", "not_found_handling": "404-page" },
+  "workers_dev": false,
+  "routes": [{ "pattern": "repocheck.youmix.info", "custom_domain": true }]
+}
